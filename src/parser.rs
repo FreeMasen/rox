@@ -3,6 +3,9 @@ use super::expr::{Expr, Literal};
 use super::Scanner;
 use super::SimpleResult;
 use super::error::Error;
+use super::statement::Stmt;
+
+type ParserItem = Result<Stmt, Error>;
 
 pub struct Parser {
     pub scanner: Scanner,
@@ -19,6 +22,26 @@ impl Parser {
 
     pub fn line(&self) -> usize {
         self.scanner.line
+    }
+
+    pub fn statement(&mut self) -> SimpleResult<Stmt> {
+        if self.at(TokenType::Print)? {
+            self.print_stmt()
+        } else {
+            self.expression_stmt()
+        }
+    }
+
+    pub fn print_stmt(&mut self) -> SimpleResult<Stmt> {
+        let value = self.expression()?;
+        self.consume(TokenType::Semicolon, "Print statments must end with a semi-colon")?;
+        Ok(Stmt::Print(value))
+    }
+
+    pub fn expression_stmt(&mut self) -> SimpleResult<Stmt> {
+        let value = self.expression()?;
+        self.consume(TokenType::Semicolon, "Expected semi-colon after expression")?;
+        Ok(Stmt::Expr(value))
     }
     
     pub fn expression(&mut self) -> SimpleResult<Expr> {
@@ -162,7 +185,6 @@ impl Parser {
         self.scanner.done()
     }
 
-
     fn consume(&mut self, tok: TokenType, msg: &str) -> SimpleResult<()> {
         if self.check(tok) {
             self.advance()?;
@@ -191,6 +213,17 @@ impl Parser {
                     break;
             }
             let _ = self.advance();
+        }
+    }
+}
+
+impl Iterator for Parser {
+    type Item = ParserItem;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.is_at_end() {
+            None
+        } else {
+            Some(self.statement())
         }
     }
 }

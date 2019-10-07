@@ -154,7 +154,7 @@ impl Scanner {
     }
 
     pub fn add_literal(&mut self, kind: TokenType) -> Token {
-        let text: String = self.source[self.start..self.current].iter().collect();
+        let text: String = self.source[self.start..self.current].iter().collect::<String>().trim().to_string();
         Token::new(
             kind,
             text,
@@ -196,7 +196,7 @@ impl Scanner {
             Err(Error::Scanner(format!("Unterminated string literal")))
         } else {
             let _ = self.advance();
-            let text = self.source[self.start+1..self.current-1].iter().collect();
+            let text = self.source[self.start+1..self.current-1].iter().collect::<String>().trim().to_string();
             Ok(self.add_literal(TokenType::String(text)))
         }
     }
@@ -211,8 +211,8 @@ impl Scanner {
                 let _ = self.advance();
             }
         }
-        let text: String = self.source[self.start..self.current].iter().collect();
-        let value = text.parse().map_err(|e| Error::Scanner(format!("Unable to parse number {} {}", text, e)))?;
+        let text = self.source[self.start..self.current].iter().collect::<String>();
+        let value = text.trim().parse().map_err(|e| Error::Scanner(format!("Unable to parse number {} {}", text, e)))?;
         Ok(self.add_literal(TokenType::Number(value)))
     }
 
@@ -220,8 +220,8 @@ impl Scanner {
         while self.peek().is_alphanumeric() {
             let _ = self.advance();
         }
-        let text: String = self.source[self.start..self.current].iter().collect();
-        let ty = match text.as_str() {
+        let text = self.source[self.start..self.current].iter().collect::<String>();
+        let ty = match text.trim() {
             "and" => TokenType::And,
             "class" => TokenType::Class,
             "else" => TokenType::Else,

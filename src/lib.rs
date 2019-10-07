@@ -13,6 +13,7 @@ pub mod token;
 mod expr;
 mod parser;
 mod interpreter;
+mod statement;
 
 pub use scanner::Scanner;
 pub use error::Error;
@@ -53,19 +54,16 @@ impl Lox {
         let scanner = Scanner::new(s)?;
        
         let mut parser = parser::Parser::new(scanner);
-        let int = interpreter::Interpreter;
-        while !parser.is_at_end() {
-            match parser.expression() {
-                Ok(expr) => match int.evaluate(&expr) {
-                    Ok(val) => println!("{}", val),
-                    Err(e) => {
-                        self.error(parser.line(), e);
-                    },
+        let mut int = interpreter::Interpreter;
+        while let Some(stmt) = parser.next() {
+            match &stmt {
+                Ok(stmt) => {
+                    int.interpret(&stmt)?;
                 },
                 Err(e) => {
-                    self.error(parser.line(), e);
+                    self.error(parser.line(), e.clone());
                     parser.sync();
-                }
+                },
             }
         }
         Ok(())

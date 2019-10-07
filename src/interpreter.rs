@@ -5,6 +5,10 @@ use super::{
         ExprVisitor,
         Literal,
     },
+    statement::{
+        Stmt,
+        StmtVisitor,
+    },
     token::{
         Token,
         TokenType,
@@ -56,7 +60,22 @@ impl ExprVisitor<IntResult> for Interpreter {
     }
 }
 
+impl StmtVisitor<()> for Interpreter {
+    fn visit_expr_stmt(&mut self, expr: &Expr) -> Result<(), Error> {
+        self.evaluate(expr)?;
+        Ok(())
+    }
+    fn visit_print_stmt(&mut self, expr: &Expr) -> Result<(), Error> {
+        println!("{}", self.evaluate(expr)?);
+        Ok(())
+    }
+}
+
 impl Interpreter {
+    pub fn interpret(&mut self, stmt: &Stmt) -> Result<(), Error> {
+        stmt.accept(self)
+    }
+
     pub fn evaluate(&self, expr: &Expr) -> IntResult {
         expr.accept(self)
     }
@@ -68,6 +87,7 @@ impl Interpreter {
             _ => true,
         }
     }
+    
     fn is_equal(lhs: &Literal, rhs: &Literal) -> bool {
         match (lhs, rhs) {
             (Literal::Nil, Literal::Nil) => true,
