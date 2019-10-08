@@ -1,7 +1,5 @@
+use rox::Lox;
 use std::env::args;
-use rox::{
-    Lox,
-};
 
 fn main() {
     let mut args = args();

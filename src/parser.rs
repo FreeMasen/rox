@@ -1,9 +1,9 @@
-use super::token::{Token, TokenType};
+use super::error::Error;
 use super::expr::{Expr, Literal};
+use super::statement::Stmt;
+use super::token::{Token, TokenType};
 use super::Scanner;
 use super::SimpleResult;
-use super::error::Error;
-use super::statement::Stmt;
 
 type ParserItem = Result<Stmt, Error>;
 
@@ -24,6 +24,14 @@ impl Parser {
         self.scanner.line
     }
 
+    pub fn decl(&mut self) -> SimpleResult<Stmt> {
+        if self.at(TokenType::Var)? {
+            self.var_decl()
+        } else {
+            self.statement()
+        }
+    }
+
     pub fn statement(&mut self) -> SimpleResult<Stmt> {
         if self.at(TokenType::Print)? {
             self.print_stmt()
@@ -32,9 +40,26 @@ impl Parser {
         }
     }
 
+    pub fn var_decl(&mut self) -> SimpleResult<Stmt> {
+        let name = self.expect_ident()?;
+        let value = if self.at(TokenType::Equal)? {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+        self.consume(
+            TokenType::Semicolon,
+            "Expect ';' after variable declaration.",
+        )?;
+        Ok(Stmt::Var { name, value })
+    }
+
     pub fn print_stmt(&mut self) -> SimpleResult<Stmt> {
         let value = self.expression()?;
-        self.consume(TokenType::Semicolon, "Print statments must end with a semi-colon")?;
+        self.consume(
+            TokenType::Semicolon,
+            "Print statments must end with a semi-colon",
+        )?;
         Ok(Stmt::Print(value))
     }
 
@@ -43,7 +68,7 @@ impl Parser {
         self.consume(TokenType::Semicolon, "Expected semi-colon after expression")?;
         Ok(Stmt::Expr(value))
     }
-    
+
     pub fn expression(&mut self) -> SimpleResult<Expr> {
         self.equality()
     }
@@ -60,14 +85,18 @@ impl Parser {
 
     fn comparison(&mut self) -> SimpleResult<Expr> {
         let mut expr = self.addition()?;
-        while self.at(TokenType::Greater)? || self.at(TokenType::GreaterEqual)?
-        || self.at(TokenType::Less)? || self.at(TokenType::LessEqual)? {
+        while self.at(TokenType::Greater)?
+            || self.at(TokenType::GreaterEqual)?
+            || self.at(TokenType::Less)?
+            || self.at(TokenType::LessEqual)?
+        {
             let op = self.previous()?;
             let right = self.addition()?;
             expr = Expr::binary(expr, right, op);
         }
         Ok(expr)
     }
+
     fn addition(&mut self) -> SimpleResult<Expr> {
         let mut expr = self.multiplication()?;
         while self.at(TokenType::Minus)? || self.at(TokenType::Plus)? {
@@ -77,6 +106,7 @@ impl Parser {
         }
         Ok(expr)
     }
+
     fn multiplication(&mut self) -> SimpleResult<Expr> {
         let mut expr = self.unary()?;
         while self.at(TokenType::Slash)? || self.at(TokenType::Star)? {
@@ -86,6 +116,7 @@ impl Parser {
         }
         Ok(expr)
     }
+
     fn unary(&mut self) -> SimpleResult<Expr> {
         if self.at(TokenType::Bang)? || self.at(TokenType::Minus)? {
             let op = self.previous()?;
@@ -97,30 +128,21 @@ impl Parser {
     }
 
     fn primary(&mut self) -> SimpleResult<Expr> {
-        Ok(if self.at(TokenType::False)? {
-            Expr::Literal(
-                self.previous_literal()?
-            )
-        } else if self.at(TokenType::True)? {
-            Expr::Literal(
-                self.previous_literal()?
-            )
-        } else if self.at(TokenType::Nil)? {
-            Expr::Literal(
-                self.previous_literal()?
-            )
-        } else if self.at_literal()? {
-            Expr::Literal(
-                self.previous_literal()?
-            )
+        Ok(if self.at(TokenType::False)? 
+            || self.at(TokenType::True)?
+            || self.at(TokenType::Nil)?
+            || self.at_literal()? 
+            || self.at_ident()? {
+            Expr::Literal(self.previous_literal()?)
         } else if self.at(TokenType::LeftParen)? {
             let expr = self.expression()?;
             self.consume(TokenType::RightParen, "Expect ')' after expression")?;
             Expr::grouping(expr)
         } else {
-            return Err(
-                Error::Parser(format!("Unexpected expression: {:?}", self.scanner.lookahead()))
-            )
+            return Err(Error::Parser(format!(
+                "Unexpected expression: {:?}",
+                self.scanner.lookahead()
+            )));
         })
     }
 
@@ -131,25 +153,41 @@ impl Parser {
             TokenType::True => Literal::Bool(true),
             TokenType::False => Literal::Bool(false),
             TokenType::Nil => Literal::Nil,
+            TokenType::Identifier(s) => Literal::Ident(s),
             _ => return Err(Error::Parser("expected literal".into())),
         })
     }
+
     fn previous(&mut self) -> Result<Token, Error> {
         if let Some(tok) = self.tokens.last() {
             Ok(tok.clone())
         } else {
-            Err(Error::Parser("Attempt to get last token when none was found".into()))
+            Err(Error::Parser(
+                "Attempt to get last token when none was found".into(),
+            ))
         }
     }
+
     fn at_literal(&mut self) -> Result<bool, Error> {
         if let Some(tok) = self.scanner.lookahead() {
             match tok.kind {
-                TokenType::Number(_) 
-                | TokenType::String(_) => {
+                TokenType::Number(_) | TokenType::String(_) => {
                     self.advance()?;
                     Ok(true)
-                },
+                }
                 _ => Ok(false),
+            }
+        } else {
+            Ok(false)
+        }
+    }
+    fn at_ident(&mut self) -> Result<bool, Error> {
+        if let Some(tok) = self.scanner.lookahead() {
+            if let TokenType::Identifier(_) = tok.kind {
+                self.advance()?;
+                Ok(true)
+            } else {
+                Ok(false)
             }
         } else {
             Ok(false)
@@ -162,6 +200,18 @@ impl Parser {
         } else {
             Ok(false)
         }
+    }
+
+    fn expect_ident(&mut self) -> Result<String, Error> {
+        if let Some(tok) = self.scanner.lookahead() {
+            if let TokenType::Identifier(name) = &tok.kind {
+                return Ok(name.to_string());
+            }
+        }
+        Err(Error::Parser(format!(
+            "Expected identifier: {:?}",
+            self.scanner.lookahead()
+        )))
     }
 
     fn advance(&mut self) -> Result<(), Error> {
@@ -202,15 +252,16 @@ impl Parser {
                     break;
                 }
             }
-            if self.scanner.lookahead_matches(TokenType::Class )
+            if self.scanner.lookahead_matches(TokenType::Class)
                 || self.scanner.lookahead_matches(TokenType::Fun)
                 || self.scanner.lookahead_matches(TokenType::Var)
                 || self.scanner.lookahead_matches(TokenType::For)
                 || self.scanner.lookahead_matches(TokenType::If)
                 || self.scanner.lookahead_matches(TokenType::While)
                 || self.scanner.lookahead_matches(TokenType::Print)
-                || self.scanner.lookahead_matches(TokenType::Return) {
-                    break;
+                || self.scanner.lookahead_matches(TokenType::Return)
+            {
+                break;
             }
             let _ = self.advance();
         }
@@ -223,7 +274,7 @@ impl Iterator for Parser {
         if self.is_at_end() {
             None
         } else {
-            Some(self.statement())
+            Some(self.decl())
         }
     }
 }

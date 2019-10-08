@@ -1,5 +1,5 @@
-use super::{SimpleResult, Error};
 use super::token::{Token, TokenType};
+use super::{Error, SimpleResult};
 
 type ScannerResult = Result<Token, Error>;
 type InvertedResult = Result<Option<Token>, Error>;
@@ -35,7 +35,7 @@ impl Scanner {
         }
     }
     pub fn scan_tokens(&mut self) -> SimpleResult<Vec<Token>> {
-        let ret  = self.collect::<Result<Vec<Token>, Error>>()?;
+        let ret = self.collect::<Result<Vec<Token>, Error>>()?;
         Ok(ret)
     }
 
@@ -44,7 +44,10 @@ impl Scanner {
     }
 
     pub fn done(&self) -> bool {
-        self.lookahead.as_ref().map(|t| t.kind == TokenType::Eof).unwrap_or(true)
+        self.lookahead
+            .as_ref()
+            .map(|t| t.kind == TokenType::Eof)
+            .unwrap_or(true)
     }
 
     pub fn scan_token(&mut self) -> InvertedResult {
@@ -73,7 +76,7 @@ impl Scanner {
                     TokenType::Bang
                 };
                 self.add_token(token)
-            },
+            }
             Some('=') => {
                 let token = if self.match_next('=') {
                     TokenType::EqualEqual
@@ -81,7 +84,7 @@ impl Scanner {
                     TokenType::Equal
                 };
                 self.add_token(token)
-            },
+            }
             Some('<') => {
                 let token = if self.match_next('=') {
                     TokenType::LessEqual
@@ -89,7 +92,7 @@ impl Scanner {
                     TokenType::Less
                 };
                 self.add_token(token)
-            },
+            }
             Some('>') => {
                 let token = if self.match_next('=') {
                     TokenType::GreaterEqual
@@ -97,20 +100,20 @@ impl Scanner {
                     TokenType::Greater
                 };
                 self.add_token(token)
-            },
-            Some('/') => if self.match_next('/') {
-                while self.peek() != '\n' && !self.is_at_end() {
-                    self.advance();
-                }
-                return self.scan_token();
-            } else {
-                self.add_token(TokenType::Slash)
             }
-            Some(' ') 
-                | Some('\r') 
-                | Some('\t') => {
+            Some('/') => {
+                if self.match_next('/') {
+                    while self.peek() != '\n' && !self.is_at_end() {
+                        self.advance();
+                    }
                     return self.scan_token();
-                },
+                } else {
+                    self.add_token(TokenType::Slash)
+                }
+            }
+            Some(' ') | Some('\r') | Some('\t') => {
+                return self.scan_token();
+            }
             Some('\n') => {
                 self.line += 1;
                 return self.scan_token();
@@ -119,7 +122,7 @@ impl Scanner {
                 let tok = self.string()?;
                 tok
             }
-            Some(c)  => {
+            Some(c) => {
                 if c.is_digit(10) {
                     let tok = self.number()?;
                     tok
@@ -130,11 +133,11 @@ impl Scanner {
                     let tok = self.unknown_token(c)?;
                     tok
                 }
-            },
+            }
             None => {
                 let tok = self.unknown_token('\0')?;
                 tok
-            },
+            }
         };
         let ret = ::std::mem::replace(&mut self.lookahead, Some(next));
         Ok(ret)
@@ -154,12 +157,12 @@ impl Scanner {
     }
 
     pub fn add_literal(&mut self, kind: TokenType) -> Token {
-        let text: String = self.source[self.start..self.current].iter().collect::<String>().trim().to_string();
-        Token::new(
-            kind,
-            text,
-            self.line
-        )
+        let text: String = self.source[self.start..self.current]
+            .iter()
+            .collect::<String>()
+            .trim()
+            .to_string();
+        Token::new(kind, text, self.line)
     }
     fn match_next(&mut self, e: char) -> bool {
         if self.is_at_end() {
@@ -175,7 +178,7 @@ impl Scanner {
             } else {
                 false
             }
-        } 
+        }
     }
     pub fn peek(&self) -> char {
         if let Some(c) = self.source.get(self.current) {
@@ -196,7 +199,11 @@ impl Scanner {
             Err(Error::Scanner(format!("Unterminated string literal")))
         } else {
             let _ = self.advance();
-            let text = self.source[self.start+1..self.current-1].iter().collect::<String>().trim().to_string();
+            let text = self.source[self.start + 1..self.current - 1]
+                .iter()
+                .collect::<String>()
+                .trim()
+                .to_string();
             Ok(self.add_literal(TokenType::String(text)))
         }
     }
@@ -211,8 +218,13 @@ impl Scanner {
                 let _ = self.advance();
             }
         }
-        let text = self.source[self.start..self.current].iter().collect::<String>();
-        let value = text.trim().parse().map_err(|e| Error::Scanner(format!("Unable to parse number {} {}", text, e)))?;
+        let text = self.source[self.start..self.current]
+            .iter()
+            .collect::<String>();
+        let value = text
+            .trim()
+            .parse()
+            .map_err(|e| Error::Scanner(format!("Unable to parse number {} {}", text, e)))?;
         Ok(self.add_literal(TokenType::Number(value)))
     }
 
@@ -220,7 +232,9 @@ impl Scanner {
         while self.peek().is_alphanumeric() {
             let _ = self.advance();
         }
-        let text = self.source[self.start..self.current].iter().collect::<String>();
+        let text = self.source[self.start..self.current]
+            .iter()
+            .collect::<String>();
         let ty = match text.trim() {
             "and" => TokenType::And,
             "class" => TokenType::Class,
@@ -238,19 +252,18 @@ impl Scanner {
             "true" => TokenType::True,
             "var" => TokenType::Var,
             "while" => TokenType::While,
-            _ => TokenType::Identifier(text)
+            _ => TokenType::Identifier(text),
         };
         Ok(self.add_literal(ty))
     }
 
-    pub fn peek_next(&self) -> char  {
+    pub fn peek_next(&self) -> char {
         if self.current + 1 >= self.source.len() {
             '\0'
         } else {
             self.source[self.current]
         }
     }
-
 }
 
 impl Iterator for Scanner {

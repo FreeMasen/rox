@@ -1,38 +1,31 @@
-use std::{
-    path::Path,
-    fs::read_to_string,
-    io::{
-        stdin,
-    },
+use std::{fs::read_to_string, io::stdin, path::Path};
 
-};
-
-mod scanner;
 mod error;
-pub mod token;
 mod expr;
-mod parser;
 mod interpreter;
+mod parser;
+mod scanner;
 mod statement;
+pub mod token;
 
-pub use scanner::Scanner;
 pub use error::Error;
+pub use scanner::Scanner;
+use interpreter::Interpreter;
 
 type SimpleResult<T> = Result<T, Error>;
 
 pub struct Lox {
-    had_error: bool
+    had_error: bool,
 }
-
 
 impl Lox {
     pub fn new() -> Self {
-        Self {
-            had_error: false,
-        }
+        Self { had_error: false }
     }
     pub fn run_file<T>(&mut self, path: T) -> SimpleResult<()>
-    where T: AsRef<Path> {
+    where
+        T: AsRef<Path>,
+    {
         self.run(read_to_string(path).map_err(|e| Error::Runtime(format!("IO Error: {}", e)))?)?;
         if self.had_error {
             ::std::process::exit(65);
@@ -44,7 +37,9 @@ impl Lox {
         loop {
             let mut line = String::new();
             print!("> ");
-            reader.read_line(&mut line).map_err(|e| Error::Runtime(format!("IO Error: {}", e)))?;
+            reader
+                .read_line(&mut line)
+                .map_err(|e| Error::Runtime(format!("IO Error: {}", e)))?;
             let _ = self.run(line);
             self.had_error = false;
         }
@@ -52,18 +47,18 @@ impl Lox {
     }
     fn run(&mut self, s: String) -> SimpleResult<()> {
         let scanner = Scanner::new(s)?;
-       
+
         let mut parser = parser::Parser::new(scanner);
-        let mut int = interpreter::Interpreter;
+        let mut int = Interpreter::new();
         while let Some(stmt) = parser.next() {
             match &stmt {
                 Ok(stmt) => {
                     int.interpret(&stmt)?;
-                },
+                }
                 Err(e) => {
                     self.error(parser.line(), e.clone());
                     parser.sync();
-                },
+                }
             }
         }
         Ok(())
@@ -77,8 +72,3 @@ impl Lox {
         self.had_error = true;
     }
 }
-
-
-
-
-

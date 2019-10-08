@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone)]
 pub struct Token {
     pub kind: TokenType,
@@ -7,16 +6,8 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn new(
-        kind: TokenType,
-        lexeme: String,
-        line: usize,
-    ) -> Self {
-        Self {
-            kind,
-            lexeme,
-            line,
-        }
+    pub fn new(kind: TokenType, lexeme: String, line: usize) -> Self {
+        Self { kind, lexeme, line }
     }
 }
 
@@ -46,7 +37,7 @@ pub enum TokenType {
     Identifier(String),
     String(String),
     Number(f64),
-    
+
     And,
     Class,
     Else,
