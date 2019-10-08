@@ -1,3 +1,4 @@
+use super::error::Error;
 use super::token::Token;
 #[derive(Debug, Clone)]
 pub enum Expr {
@@ -13,13 +14,21 @@ pub enum Expr {
         right: Box<Expr>,
     },
     Var(String),
+    Assign {
+        name: String,
+        value: Box<Expr>,
+    },
+    Log {
+        left: Box<Expr>,
+        operator: Token,
+        right: Box<Expr>,
+    },
 }
 #[derive(Debug, Clone)]
 pub enum Literal {
     String(String),
     Number(f64),
     Bool(bool),
-    Ident(String),
     Nil,
 }
 
@@ -29,14 +38,13 @@ impl ::std::fmt::Display for Literal {
             Literal::String(s) => write!(f, "\"{}\"", s),
             Literal::Number(n) => n.fmt(f),
             Literal::Bool(b) => b.fmt(f),
-            Literal::Ident(s) => s.fmt(f),
             Literal::Nil => write!(f, "nil"),
         }
     }
 }
 
 impl Expr {
-    pub fn accept<T>(&self, visitor: &impl ExprVisitor<T>) -> T {
+    pub fn accept<T>(&self, visitor: &mut impl ExprVisitor<T>) -> Result<T, Error> {
         match self {
             Expr::Binary {
                 left,
@@ -46,7 +54,13 @@ impl Expr {
             Expr::Grouping(_) => visitor.visit_group(self),
             Expr::Literal(lit) => visitor.visit_lit(lit),
             Expr::Unary { operator, right } => visitor.visit_un(operator, right),
-            Expr::Var(name) => visitor.visit_ident(name),
+            Expr::Var(name) => visitor.visit_var(name),
+            Expr::Assign { name, value } => visitor.visit_assign(name, value),
+            Expr::Log {
+                left,
+                operator,
+                right,
+            } => visitor.visit_log(left, operator, right),
         }
     }
 
@@ -67,70 +81,27 @@ impl Expr {
     pub fn grouping(inner: Expr) -> Self {
         Expr::Grouping(Box::new(inner))
     }
+    pub fn assign(name: String, value: Expr) -> Self {
+        Expr::Assign {
+            name,
+            value: Box::new(value),
+        }
+    }
+    pub fn log(left: Expr, right: Expr, op: Token) -> Self {
+        Expr::Log {
+            left: Box::new(left),
+            operator: op,
+            right: Box::new(right),
+        }
+    }
 }
 
 pub trait ExprVisitor<T> {
-    fn visit_bin(&self, left: &Expr, op: &Token, right: &Expr) -> T;
-    fn visit_group(&self, group: &Expr) -> T;
-    fn visit_lit(&self, lit: &Literal) -> T;
-    fn visit_un(&self, op: &Token, ex: &Expr) -> T;
-    fn visit_ident(&self, name: &str) -> T;
-}
-
-pub struct ExprPrinter;
-impl ExprVisitor<String> for ExprPrinter {
-    fn visit_bin(&self, left: &Expr, op: &Token, right: &Expr) -> String {
-        self.parenthesize(&op.lexeme, &[left, right])
-    }
-    fn visit_group(&self, group: &Expr) -> String {
-        self.parenthesize("group", &[group])
-    }
-    fn visit_lit(&self, lit: &Literal) -> String {
-        format!("{}", lit)
-    }
-    fn visit_un(&self, op: &Token, ex: &Expr) -> String {
-        self.parenthesize(&op.lexeme, &[ex])
-    }
-    fn visit_ident(&self, name: &str) -> String {
-        name.to_string()
-    }
-}
-
-impl ExprPrinter {
-    pub fn print(&self, ex: &Expr) -> String {
-        ex.accept(self)
-    }
-    pub fn parenthesize(&self, name: &str, exprs: &[&Expr]) -> String {
-        let mut ret = String::new();
-        ret.push('(');
-        ret.push_str(name);
-        for ex in exprs {
-            ret.push(' ');
-            ret.push_str(&ex.accept(self))
-        }
-        ret.push(')');
-        ret
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::token::TokenType;
-    #[test]
-    fn test_pretty_printer() {
-        let pp = ExprPrinter;
-        let expr = Expr::binary(
-            Expr::unary(
-                Token::new(TokenType::Minus, "-".to_string(), 1),
-                Expr::Literal(Literal::Number(123.0)),
-            ),
-            Expr::grouping(Expr::Literal(Literal::Number(45.67))),
-            Token::new(TokenType::Star, "*".to_string(), 1),
-        );
-        let expectation = "(* (- 123) (group 45.67))".to_string();
-        let result = pp.print(&expr);
-        eprintln!("result: {}", result);
-        assert_eq!(expectation, result);
-    }
+    fn visit_bin(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<T, Error>;
+    fn visit_group(&mut self, group: &Expr) -> Result<T, Error>;
+    fn visit_lit(&self, lit: &Literal) -> Result<T, Error>;
+    fn visit_un(&mut self, op: &Token, ex: &Expr) -> Result<T, Error>;
+    fn visit_var(&mut self, name: &str) -> Result<T, Error>;
+    fn visit_assign(&mut self, name: &str, value: &Expr) -> Result<T, Error>;
+    fn visit_log(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<T, Error>;
 }

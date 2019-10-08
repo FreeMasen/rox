@@ -9,8 +9,8 @@ mod statement;
 pub mod token;
 
 pub use error::Error;
-pub use scanner::Scanner;
 use interpreter::Interpreter;
+pub use scanner::Scanner;
 
 type SimpleResult<T> = Result<T, Error>;
 
@@ -26,7 +26,9 @@ impl Lox {
     where
         T: AsRef<Path>,
     {
-        self.run(read_to_string(path).map_err(|e| Error::Runtime(format!("IO Error: {}", e)))?)?;
+        let lox = read_to_string(path).map_err(|e| Error::Runtime(format!("IO Error: {}", e)))?;
+        let mut int = Interpreter::new();
+        self.run(lox, &mut int)?;
         if self.had_error {
             ::std::process::exit(65);
         }
@@ -34,22 +36,22 @@ impl Lox {
     }
     pub fn run_prompt(&mut self) -> SimpleResult<()> {
         let reader = stdin();
+        let mut int = Interpreter::new();
         loop {
             let mut line = String::new();
-            print!("> ");
+            write_prompt();
             reader
                 .read_line(&mut line)
                 .map_err(|e| Error::Runtime(format!("IO Error: {}", e)))?;
-            let _ = self.run(line);
+            let _ = self.run(line, &mut int);
             self.had_error = false;
         }
-        Ok(())
     }
-    fn run(&mut self, s: String) -> SimpleResult<()> {
+    fn run(&mut self, s: String, int: &mut Interpreter) -> SimpleResult<()> {
         let scanner = Scanner::new(s)?;
 
         let mut parser = parser::Parser::new(scanner);
-        let mut int = Interpreter::new();
+
         while let Some(stmt) = parser.next() {
             match &stmt {
                 Ok(stmt) => {
@@ -71,4 +73,11 @@ impl Lox {
         println!("[line {}] Error {}: {}", line, file, msg);
         self.had_error = true;
     }
+}
+
+fn write_prompt() {
+    use std::io::{stdout, Write};
+    let mut out = stdout();
+    let _ = out.write(b"> ");
+    let _ = out.flush();
 }

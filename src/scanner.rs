@@ -112,6 +112,7 @@ impl Scanner {
                 }
             }
             Some(' ') | Some('\r') | Some('\t') => {
+                self.start += 1;
                 return self.scan_token();
             }
             Some('\n') => {
@@ -252,7 +253,7 @@ impl Scanner {
             "true" => TokenType::True,
             "var" => TokenType::Var,
             "while" => TokenType::While,
-            _ => TokenType::Identifier(text),
+            _ => TokenType::Identifier(text.trim().to_string()),
         };
         Ok(self.add_literal(ty))
     }
