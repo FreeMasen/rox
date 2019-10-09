@@ -28,7 +28,11 @@ print b;
 print c;
 var i = 0;
 
-while (i < 100) {
+while (i < 10) {
     print i;
     i = i + 1;
+}
+
+for (var j = 0; j < 20; j = j + 1) {
+  print j;
 }

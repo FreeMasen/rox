@@ -215,29 +215,6 @@ impl StmtVisitor<()> for Interpreter {
         }
         Ok(())
     }
-
-    fn visit_for_stmt(
-        &mut self,
-        init: &Option<Box<Stmt>>,
-        test: &Option<Expr>,
-        update: &Option<Expr>,
-        body: &Stmt,
-    ) -> Result<(), Error> {
-        let mut while_body = vec![];
-        if let Some(inner) = init {
-            while_body.push((**inner).clone());
-        }
-        while_body.push(body.clone());
-        if let Some(update) = update {
-            while_body.push(Stmt::Expr(update.clone()));
-        }
-        let cond = if let Some(test) = test {
-            test.clone()
-        } else {
-            Expr::Literal(Literal::Bool(true))
-        };
-        self.visit_while_stmt(&cond, &Stmt::Block(while_body))
-    }
 }
 
 impl Interpreter {
@@ -298,6 +275,21 @@ var i = 0;
 while (i < 100) {
     print i;
     i = i + 1;
+}
+";
+        let mut int = Interpreter::new();
+        let mut parser = crate::parser::Parser::new(
+            crate::scanner::Scanner::new(lox.into()).unwrap()
+        );
+        while let Some(stmt) = parser.next() {
+            int.interpret(&stmt.unwrap()).unwrap();
+        }
+    }
+    #[test]
+    fn for_loop() {
+        let lox = "
+for (var i = 0; i < 10; i = i + 1) {
+    print i;
 }
 ";
         let mut int = Interpreter::new();

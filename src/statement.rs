@@ -17,23 +17,9 @@ pub enum Stmt {
         test: Expr,
         body: Box<Stmt>,
     },
-    For {
-        init: Option<Box<Stmt>>,
-        test: Option<Expr>,
-        update: Option<Expr>,
-        body: Box<Stmt>,
-    },
 }
 
 impl Stmt {
-    pub fn for_stmt(init: Option<Stmt>, test: Option<Expr>, update: Option<Expr>, body: Stmt) -> Self {
-        Stmt::For {
-            init: init.map(|i| Box::new(i)),
-            body: Box::new(body),
-            test,
-            update,
-        }
-    }
     pub fn accept<T>(&self, visitor: &mut impl StmtVisitor<T>) -> Result<T, Error> {
         match self {
             Stmt::Print(inner) => visitor.visit_print_stmt(inner),
@@ -46,12 +32,6 @@ impl Stmt {
                 alternate,
             } => visitor.visit_if_stmt(test, consequence, alternate),
             Stmt::While { test, body } => visitor.visit_while_stmt(test, body),
-            Stmt::For { 
-                init,
-                test,
-                update,
-                body,
-            } => visitor.visit_for_stmt(init, test, update, body),
         }
     }
 }
@@ -68,11 +48,4 @@ pub trait StmtVisitor<T> {
         alt: &Option<Box<Stmt>>,
     ) -> Result<T, Error>;
     fn visit_while_stmt(&mut self, test: &Expr, body: &Stmt) -> Result<T, Error>;
-    fn visit_for_stmt(
-        &mut self,
-        init: &Option<Box<Stmt>>,
-        test: &Option<Expr>,
-        update: &Option<Expr>,
-        body: &Stmt,
-    ) -> Result<T, Error>;
 }

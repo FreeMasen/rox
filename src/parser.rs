@@ -94,20 +94,24 @@ impl Parser {
         } else {
             Some(self.expression_stmt()?)
         };
-        let test = if !self.check(TokenType::Semicolon) {
+        let cond = if !self.check(TokenType::Semicolon) {
+            self.expression()?
+        } else {
+            Expr::Literal(Literal::Bool(true))
+        };
+        self.consume(TokenType::Semicolon, "Expected ';' after for loop test")?;
+        let update = if !self.check(TokenType::RightParen) {
             Some(self.expression()?)
         } else {
             None
         };
-        self.consume(TokenType::Semicolon, "Expected ';' after loop test")?;
-        let update = if !self.check(TokenType::Semicolon) {
-            Some(self.expression()?)
-        } else {
-            None
-        };
-        self.consume(TokenType::RightParen, "Expected ) after `for (...`")?;
+        self.consume(TokenType::RightParen, "Expected ')' after if (...")?;
         let body = self.statement()?;
-        Ok(Stmt::for_stmt(init, test, update, body))
+        let mut block = vec![body];
+        if let Some(expr) = update {
+            block.push(Stmt::Expr(expr));
+        }
+        Ok(Stmt::While { test: cond, body: Box::new(Stmt::Block(block)) })
     }
 
     pub fn block_stmt(&mut self) -> SimpleResult<Stmt> {
