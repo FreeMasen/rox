@@ -107,11 +107,17 @@ impl Parser {
         };
         self.consume(TokenType::RightParen, "Expected ')' after if (...")?;
         let body = self.statement()?;
-        let mut block = vec![body];
-        if let Some(expr) = update {
-            block.push(Stmt::Expr(expr));
+        let mut block = vec![];
+        if let Some(init) = init {
+            block.push(init);
         }
-        Ok(Stmt::While { test: cond, body: Box::new(Stmt::Block(block)) })
+        let mut w_body = vec![body];
+        if let Some(expr) = update {
+            w_body.push(Stmt::Expr(expr));
+        }
+        let w = Stmt::While { test: cond, body: Box::new(Stmt::Block(w_body)) };
+        block.push(w);
+        Ok(Stmt::Block(block))
     }
 
     pub fn block_stmt(&mut self) -> SimpleResult<Stmt> {

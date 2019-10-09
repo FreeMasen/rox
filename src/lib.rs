@@ -37,12 +37,29 @@ impl Lox {
     pub fn run_prompt(&mut self) -> SimpleResult<()> {
         let reader = stdin();
         let mut int = Interpreter::new();
+        let mut indent = 0;
         loop {
             let mut line = String::new();
-            write_prompt();
-            reader
-                .read_line(&mut line)
-                .map_err(|e| Error::Runtime(format!("IO Error: {}", e)))?;
+            write_prompt(indent);
+            loop {
+                reader
+                    .read_line(&mut line)
+                    .map_err(|e| Error::Runtime(format!("IO Error: {}", e)))?;
+                if indent == 0 && line.ends_with(";\n") {
+                    break;
+                }
+                if line.ends_with("{\n") {
+                    indent += 1;
+                }
+                if line.ends_with("}\n") {
+                    indent = indent.saturating_sub(1);
+                }
+                if indent == 0 {
+                    break;
+                }
+                write_prompt(indent);
+            }
+            println!("{:?}", line);
             let _ = self.run(line, &mut int);
             self.had_error = false;
         }
@@ -75,9 +92,13 @@ impl Lox {
     }
 }
 
-fn write_prompt() {
+fn write_prompt(indent: usize) {
     use std::io::{stdout, Write};
     let mut out = stdout();
-    let _ = out.write(b"> ");
+    if indent > 0 {
+        let _ = out.write("  ".repeat(indent).as_bytes());
+    } else {
+        let _ = out.write(b"> ");
+    }
     let _ = out.flush();
 }
