@@ -1,3 +1,5 @@
+use std::sync::PoisonError;
+
 #[derive(Clone, Debug)]
 pub enum Error {
     Scanner(String),
@@ -14,3 +16,8 @@ impl ::std::fmt::Display for Error {
     }
 }
 impl ::std::error::Error for Error {}
+impl<T> From<PoisonError<T>> for Error {
+    fn from(other: PoisonError<T>) -> Self {
+        Error::Runtime(format!("boom! {}", other))
+    }
+}

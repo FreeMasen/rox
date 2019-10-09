@@ -1,5 +1,7 @@
 use super::error::Error;
 use super::token::Token;
+use super::interpreter::Value;
+
 #[derive(Debug, Clone)]
 pub enum Expr {
     Binary {
@@ -23,6 +25,10 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    Call {
+        callee: Box<Expr>,
+        arguments: Vec<Expr>,
+    }
 }
 #[derive(Debug, Clone)]
 pub enum Literal {
@@ -30,6 +36,12 @@ pub enum Literal {
     Number(f64),
     Bool(bool),
     Nil,
+}
+
+impl Literal {
+    pub fn clone_into(&self) -> Value {
+        self.clone().into()
+    }
 }
 
 impl ::std::fmt::Display for Literal {
@@ -61,6 +73,10 @@ impl Expr {
                 operator,
                 right,
             } => visitor.visit_log(left, operator, right),
+            Expr::Call {
+                callee,
+                arguments,
+            } => visitor.visit_call(callee, arguments),
         }
     }
 
@@ -104,4 +120,5 @@ pub trait ExprVisitor<T> {
     fn visit_var(&mut self, name: &str) -> Result<T, Error>;
     fn visit_assign(&mut self, name: &str, value: &Expr) -> Result<T, Error>;
     fn visit_log(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<T, Error>;
+    fn visit_call(&mut self, callee: &Expr, arguments: &[Expr]) -> Result<T, Error>;
 }

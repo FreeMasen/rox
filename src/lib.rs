@@ -5,19 +5,21 @@ mod expr;
 mod interpreter;
 mod parser;
 mod scanner;
-mod statement;
+mod stmt;
 pub mod token;
+mod env;
+mod callable;
+mod globals;
+mod func;
 
 pub use error::Error;
 use interpreter::Interpreter;
 pub use scanner::Scanner;
 
 type SimpleResult<T> = Result<T, Error>;
-
 pub struct Lox {
     had_error: bool,
 }
-
 impl Lox {
     pub fn new() -> Self {
         Self { had_error: false }
@@ -45,6 +47,11 @@ impl Lox {
                 reader
                     .read_line(&mut line)
                     .map_err(|e| Error::Runtime(format!("IO Error: {}", e)))?;
+                if line.ends_with("\r\n") {
+                    line.pop();
+                    line.pop();
+                    line.push('\n');
+                }
                 if indent == 0 && line.ends_with(";\n") {
                     break;
                 }
@@ -59,7 +66,6 @@ impl Lox {
                 }
                 write_prompt(indent);
             }
-            println!("{:?}", line);
             let _ = self.run(line, &mut int);
             self.had_error = false;
         }

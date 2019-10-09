@@ -1,6 +1,6 @@
 use super::error::Error;
 use super::expr::{Expr, Literal};
-use super::statement::Stmt;
+use super::stmt::Stmt;
 use super::token::{Token, TokenType};
 use super::Scanner;
 use super::SimpleResult;
@@ -27,6 +27,8 @@ impl Parser {
     pub fn decl(&mut self) -> SimpleResult<Stmt> {
         if self.at(TokenType::Var)? {
             self.var_decl()
+        } else if self.at(TokenType::Fun)? {
+            self.fun_decl("function")
         } else {
             self.statement()
         }
@@ -35,6 +37,8 @@ impl Parser {
     pub fn statement(&mut self) -> SimpleResult<Stmt> {
         if self.at(TokenType::Print)? {
             self.print_stmt()
+        } else if self.at(TokenType::Return)? {
+            self.return_stmt()
         } else if self.at(TokenType::LeftBrace)? {
             self.block_stmt()
         } else if self.at(TokenType::If)? {
@@ -62,6 +66,29 @@ impl Parser {
         Ok(Stmt::Var { name, value })
     }
 
+    pub fn fun_decl(&mut self, kind: &str) -> SimpleResult<Stmt> {
+        let name = self.expect_ident()?;
+        self.consume(TokenType::LeftParen, &format!("Expected ( after {} identifier", kind))?;
+        let mut params = vec![];
+        if !self.check(TokenType::RightParen) {
+            params.push(self.expect_ident()?);
+            while self.at(TokenType::Comma)? {
+                params.push(self.expect_ident()?);
+                if params.len() > 255 {
+                    return Err(Error::Parser(format!("{} {:?} has too many parameters", kind, name)))
+                }
+            }
+        }
+        self.consume(TokenType::RightParen, &format!("Expected ) after {} arguments", kind))?;
+        self.consume(TokenType::LeftBrace, &format!("Expected {{ after {} arguments", kind))?;
+        let body = self.bare_block()?;
+        Ok(Stmt::Func {
+            name,
+            params,
+            body
+        })
+    }
+
     pub fn print_stmt(&mut self) -> SimpleResult<Stmt> {
         let value = self.expression()?;
         self.consume(
@@ -69,6 +96,16 @@ impl Parser {
             "Print statments must end with a semi-colon",
         )?;
         Ok(Stmt::Print(value))
+    }
+
+    pub fn return_stmt(&mut self) -> SimpleResult<Stmt> {
+        let val = if !self.check(TokenType::Semicolon) {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+        self.consume(TokenType::Semicolon, "Expected ; after return");
+        Ok(Stmt::Return(val))
     }
 
     pub fn while_stmt(&mut self) -> SimpleResult<Stmt> {
@@ -119,14 +156,17 @@ impl Parser {
         block.push(w);
         Ok(Stmt::Block(block))
     }
-
     pub fn block_stmt(&mut self) -> SimpleResult<Stmt> {
+        Ok(Stmt::Block(self.bare_block()?))
+    }
+
+    fn bare_block(&mut self) -> SimpleResult<Vec<Stmt>> {
         let mut ret = Vec::new();
         while !self.check(TokenType::RightBrace) && !self.is_at_end() {
             ret.push(self.decl()?);
         }
         self.consume(TokenType::RightBrace, "Expect '}' after block.")?;
-        Ok(Stmt::Block(ret))
+        Ok(ret)
     }
 
     pub fn if_stmt(&mut self) -> SimpleResult<Stmt> {
@@ -244,8 +284,35 @@ impl Parser {
             let right = self.unary()?;
             Ok(Expr::unary(op, right))
         } else {
-            self.primary()
+            self.call()
         }
+    }
+
+    fn call(&mut self) -> SimpleResult<Expr> {
+        let mut expr = self.primary()?;
+        loop {
+            if self.at(TokenType::LeftParen)? {
+                expr = self.finish_call(expr)?;
+            } else {
+                break;
+            }
+        }
+        Ok(expr)
+    }
+
+    fn finish_call(&mut self, expr: Expr) -> SimpleResult<Expr> {
+        let mut args = vec![];
+        if !self.check(TokenType::RightParen) {
+            args.push(self.expression()?);
+            while self.at(TokenType::Comma)? {
+                args.push(self.expression()?);
+            }
+        }
+        self.consume(TokenType::RightParen, "Expected ) at end of function call")?;
+        Ok(Expr::Call {
+            callee: Box::new(expr),
+            arguments: args,
+        })
     }
 
     fn primary(&mut self) -> SimpleResult<Expr> {

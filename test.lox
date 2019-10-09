@@ -36,3 +36,7 @@ while (i < 10) {
 for (var j = 0; j < 20; j = j + 1) {
   print j;
 }
+fun sayHi() {
+  print "hi";
+}
+sayHi();
