@@ -36,30 +36,32 @@ while (i < 10) {
 for (var j = 0; j < 20; j = j + 1) {
   print j;
 }
-
+fun randBool() {
+  var c = clock();
+  print c;
+  return isEven(c);
+}
 fun reduce(n) {
-  while (n > 10) {
-    n = n / 10;
-  }
-  return n;
+  return floor(mod(n) * 10);
+}
+
+fun floor(n) {
+  var rem = mod(n, 1);
+  return n - rem;
 }
 
 fun isOdd(n) {
-  n = reduce(n);
-  if (n == 0) return false;
-  return isEven(n - 1);
+  return mod(n, 2) != 0;
 }
 
 fun isEven(n) {
-  n = reduce(n);
-  if (n == 0) return true;
-  return isOdd(n - 1);
+  print mod(n, 2);
+  print mod(n, 2) == 0;
+  return mod(n, 2) == 0;
 }
 
 fun hi() {
-  var c = clock();
-  print c;
-  if (isEven(c)) {
+  if (randBool()) {
     return "hello";
   }
   return "hi";

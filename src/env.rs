@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    globals::Clock,
+    globals::*,
     interpreter::Value,
 };
 use std::collections::HashMap;
@@ -16,6 +16,7 @@ impl Env {
     fn global() -> Self {
         let mut values = HashMap::new();
         values.insert(String::from("clock"), Value::Func(Rc::new(Clock)));
+        values.insert(String::from("mod"), Value::Func(Rc::new(Mod)));
         Self {
             values,
             enclosing: None,

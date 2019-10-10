@@ -1,5 +1,2 @@
     Finished dev [unoptimized + debuginfo] target(s) in 0.01s
      Running `target/debug/roxc ./test.lox`
-
-thread 'main' has overflowed its stack
-fatal runtime error: stack overflow

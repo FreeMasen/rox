@@ -16,4 +16,17 @@ impl Callable for Clock {
         Ok(Value::Number(mil as f64))
     }
 }
+#[derive(Debug, Clone)]
+pub struct Mod;
+
+impl Callable for Mod {
+    fn call(&self, _: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
+        if let Some(Value::Number(lhs)) = args.get(0) {
+            if let Some(Value::Number(rhs)) = args.get(1) {
+                return Ok(Value::Number(lhs % rhs));
+            }
+        }
+        Err(Error::Runtime(format!("invalid arguments provided to mod: {:?}", args)))
+    }
+}
 
