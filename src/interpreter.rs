@@ -212,7 +212,7 @@ impl StmtVisitor<Option<Value>> for Interpreter {
 
     fn visit_return_stmt(&mut self, expr: &Option<Expr>) -> Result<Option<Value>, Error> {
         Ok(if let Some(expr) = expr {
-            Some(self.evaluate(expr))
+            Some(self.evaluate(expr)?)
         } else {
             Some(Value::Nil)
         })
@@ -234,23 +234,24 @@ impl Interpreter {
         expr.accept(self)
     }
 
-    pub fn execute_block(&mut self, stmts: &[Stmt]) -> Result<(), Error> {
+    pub fn execute_block(&mut self, stmts: &[Stmt]) -> Result<Option<Value>, Error> {
         self.env.descend();
         for stmt in stmts {
-            if let Err(e) = self.interpret(stmt) {
-                self.env.ascend();
-                return Err(e);
+            match self.interpret(stmt) {
+                Ok(maybe) => {
+                    if let Some(val) = maybe {
+                        self.env.ascend();
+                        return Ok(Some(val));
+                    }
+                },
+                Err(e) => {
+                    self.env.ascend();
+                    return Err(e);
+                }
             }
         }
         self.env.ascend();
-        Ok(())
-    }
-
-    pub fn execute_fn_body(&mut self, stmts: &[Stmt]) -> Result<Value, Error> {
-        self.env.descend();
-        for stmt in stmts {
-            
-        }
+        Ok(None)
     }
 
     fn is_truthy(lit: &Value) -> bool {

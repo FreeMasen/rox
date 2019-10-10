@@ -1,0 +1,9 @@
+fun reduce(n) {
+  var r = n;
+  while (r > 10) {
+    r = r / 10;
+  }
+  return r;
+}
+
+print reduce(1000);

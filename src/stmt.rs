@@ -61,5 +61,5 @@ pub trait StmtVisitor<T> {
     ) -> Result<T, Error>;
     fn visit_while_stmt(&mut self, test: &Expr, body: &Stmt) -> Result<T, Error>;
     fn visit_func_decl(&mut self, name: &str, params: &[String], body: &[Stmt]) -> Result<T, Error>;
-    fn visit_return_stmt<R>(&mut self, expr: &Option<Expr>) -> Result<R, Error>;
+    fn visit_return_stmt(&mut self, expr: &Option<Expr>) -> Result<T, Error>;
 }

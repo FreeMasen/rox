@@ -104,7 +104,7 @@ impl Parser {
         } else {
             None
         };
-        self.consume(TokenType::Semicolon, "Expected ; after return");
+        self.consume(TokenType::Semicolon, "Expected ; after return")?;
         Ok(Stmt::Return(val))
     }
 
@@ -189,7 +189,7 @@ impl Parser {
 
     pub fn expression_stmt(&mut self) -> SimpleResult<Stmt> {
         let value = self.expression()?;
-        self.consume(TokenType::Semicolon, "Expected semi-colon after expression")?;
+        self.consume(TokenType::Semicolon, &format!("Expected semi-colon after expression {:?}", value))?;
         Ok(Stmt::Expr(value))
     }
 

@@ -16,8 +16,12 @@ impl Callable for Func {
         for (name, value) in self.params.iter().cloned().zip(args.iter().cloned()) {
             int.env.define(name, Some(value));
         }
-        int.execute_block(&self.body)?;
+        let ret = if let Some(v) = int.execute_block(&self.body)? {
+            v
+        } else {
+            Value::Nil
+        };
         int.env.ascend();
-        Ok(Value::Nil)
+        Ok(ret)
     }
 }

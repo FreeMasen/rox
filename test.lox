@@ -36,7 +36,37 @@ while (i < 10) {
 for (var j = 0; j < 20; j = j + 1) {
   print j;
 }
-fun sayHi() {
-  print "hi";
+
+fun reduce(n) {
+  while (n > 10) {
+    n = n / 10;
+  }
+  return n;
 }
+
+fun isOdd(n) {
+  n = reduce(n);
+  if (n == 0) return false;
+  return isEven(n - 1);
+}
+
+fun isEven(n) {
+  n = reduce(n);
+  if (n == 0) return true;
+  return isOdd(n - 1);
+}
+
+fun hi() {
+  var c = clock();
+  print c;
+  if (isEven(c)) {
+    return "hello";
+  }
+  return "hi";
+}
+
+fun sayHi() {
+  print hi();
+}
+
 sayHi();

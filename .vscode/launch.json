@@ -38,7 +38,7 @@
                     "kind": "bin"
                 }
             },
-            "args": [],
+            "args": ["funcs.lox"],
             "cwd": "${workspaceFolder}"
         },
         {
