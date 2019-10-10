@@ -60,5 +60,24 @@
             "args": [],
             "cwd": "${workspaceFolder}"
         }
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit test nested_funcs",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--package=rox"
+                ],
+                "filter": {
+                    "name": "roxc",
+                    "kind": "bin"
+                }
+            },
+            "args": ["nested_funcs"],
+            "cwd": "${workspaceFolder}"
+        }
     ]
 }

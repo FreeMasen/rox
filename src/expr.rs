@@ -1,6 +1,8 @@
-use super::error::Error;
-use super::token::Token;
-use super::interpreter::Value;
+use crate::{
+    error::Error,
+    token::Token,
+    value::Value,
+};
 
 #[derive(Debug, Clone)]
 pub enum Expr {

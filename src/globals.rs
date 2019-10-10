@@ -1,13 +1,18 @@
 use crate::{
     callable::Callable,
     error::Error,
-    interpreter::{Interpreter, Value},
+    interpreter::Interpreter,
+    value::Value,
 };
 use chrono::prelude::*;
 #[derive(Debug, Clone)]
 pub struct Clock;
 
+
 impl Callable for Clock {
+    fn name(&self) -> &str {
+        "clock"
+    }
     fn call(&self, _: &mut Interpreter, _: &[Value]) -> Result<Value, Error> {
         let now = Local::now();
         let unix: DateTime<Local> = DateTime::from(::std::time::UNIX_EPOCH);
@@ -20,6 +25,12 @@ impl Callable for Clock {
 pub struct Mod;
 
 impl Callable for Mod {
+    fn name(&self) -> &str {
+        "mod"
+    }
+    fn arity(&self) -> usize {
+        2
+    }
     fn call(&self, _: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         if let Some(Value::Number(lhs)) = args.get(0) {
             if let Some(Value::Number(rhs)) = args.get(1) {

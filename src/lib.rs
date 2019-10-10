@@ -1,5 +1,8 @@
 use std::{fs::read_to_string, io::stdin, path::Path};
-
+use log::{
+    trace,
+    error,
+};
 mod error;
 mod expr;
 mod interpreter;
@@ -11,6 +14,7 @@ mod env;
 mod callable;
 mod globals;
 mod func;
+mod value;
 
 pub use error::Error;
 use interpreter::Interpreter;
@@ -28,6 +32,7 @@ impl Lox {
     where
         T: AsRef<Path>,
     {
+        trace!("Running a file");
         let lox = read_to_string(path).map_err(|e| Error::Runtime(format!("IO Error: {}", e)))?;
         let mut int = Interpreter::new();
         self.run(lox, &mut int)?;
@@ -37,6 +42,7 @@ impl Lox {
         Ok(())
     }
     pub fn run_prompt(&mut self) -> SimpleResult<()> {
+        trace!("Running a prompt");
         let reader = stdin();
         let mut int = Interpreter::new();
         let mut indent = 0;
@@ -81,6 +87,7 @@ impl Lox {
                     int.interpret(&stmt)?;
                 }
                 Err(e) => {
+                    error!("Error: {}", e);
                     self.error(parser.line(), e.clone());
                     parser.sync();
                 }

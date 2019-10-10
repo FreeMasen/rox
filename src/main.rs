@@ -1,7 +1,9 @@
 use rox::Lox;
 use std::env::args;
+use pretty_env_logger;
 
 fn main() {
+    let _ = pretty_env_logger::try_init();
     let mut args = args();
     let _ = args.next();
     let args: Vec<String> = args.collect();
