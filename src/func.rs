@@ -36,16 +36,9 @@ impl Callable for Func {
             int.env.define(name, Some(value));
         }
         let ret = match int.execute_block(&self.body) {
-            Ok(maybe) => {
-                if let Some(val) = maybe {
-                    Ok(val)
-                } else {
-                    Ok(Value::Nil)
-                }
-            },
-            Err(e) => {
-                Err(e)
-            }
+            Ok(_) => Ok(Value::Nil),
+            Err(Error::Return(v)) => Ok(v),
+            Err(e) => Err(e),
         };
         int.env.ascend(); // ascend out of function arg defs
         int.closures.insert(self.name.to_string(), int.env.ascend_out_of()?);
@@ -77,14 +70,14 @@ test = counter();
 ";
         let mut int = Interpreter::new();
         let mut p = crate::parser::Parser::new(crate::scanner::Scanner::new(lox.to_string()).unwrap());
-        assert!(int.interpret(&p.next().unwrap().unwrap()).unwrap().is_none(), "variable decl was not None");
-        assert!(int.interpret(&p.next().unwrap().unwrap()).unwrap().is_none(), "function decl was not None");
-        assert!(int.interpret(&p.next().unwrap().unwrap()).unwrap().is_none(), "variable decl was not None");
+        int.interpret(&p.next().unwrap().unwrap()).unwrap();
+        int.interpret(&p.next().unwrap().unwrap()).unwrap();
+        int.interpret(&p.next().unwrap().unwrap()).unwrap();
         
-        assert!(int.interpret(&p.next().unwrap().unwrap()).unwrap().is_none(), "First call to count is not None");
+        int.interpret(&p.next().unwrap().unwrap()).unwrap();
         let test = int.env.get("test").expect("Failed to get test from env");
         assert_eq!(test, Value::Number(1f64));
-        assert!(int.interpret(&p.next().unwrap().unwrap()).unwrap().is_none(), "Second call to count is not None");
+        int.interpret(&p.next().unwrap().unwrap()).unwrap();
         let test2 = int.env.get("test").expect("Failed to get test from env");
         assert_eq!(test2, Value::Number(2f64));
         println!("test: {:?}", test);

@@ -130,42 +130,50 @@ impl ExprVisitor<Value> for Interpreter {
             if f.arity() != args.len() {
                 return Err(Error::Runtime(format!("{} was expecting {} arguments but {} were provided", f.name(), f.arity(), args.len())))
             }
-            f.call(self, &args)
+            match f.call(self, &args) {
+                Ok(val) => Ok(val),
+                Err(Error::Return(ret)) => Ok(ret),
+                Err(e) => Err(e),
+            }
         } else {
             Err(Error::Runtime(format!("Attempt to call a something that is not a function {}", callee)))
         }
     }
 }
 
-impl StmtVisitor<Option<Value>> for Interpreter {
-    fn visit_expr_stmt(&mut self, expr: &Expr) -> Result<Option<Value>, Error> {
+impl StmtVisitor<()> for Interpreter {
+    fn visit_expr_stmt(&mut self, expr: &Expr) -> Result<(), Error> {
         trace!("visit_expr_stmt {:?}", expr);
         self.evaluate(expr)?;
-        Ok(None)
+        Ok(())
     }
 
-    fn visit_print_stmt(&mut self, expr: &Expr) -> Result<Option<Value>, Error> {
+    fn visit_print_stmt(&mut self, expr: &Expr) -> Result<(), Error> {
         trace!("visit_expr_stmt {:?}", expr);
         println!("{}", self.evaluate(expr)?);
-        Ok(None)
+        Ok(())
     }
 
-    fn visit_var_stmt(&mut self, name: String, expr: Option<Expr>) -> Result<Option<Value>, Error> {
+    fn visit_var_stmt(&mut self, name: String, expr: Option<Expr>) -> Result<(), Error> {
         trace!("visit_var_stmt {:?} {:?}", name, expr);
         let value = if let Some(expr) = expr {
-            let val = expr.accept(self)?;
+            let val = match expr.accept(self) {
+                Ok(val) 
+                | Err(Error::Return(val)) => val,
+                Err(e) => return Err(e),
+            };
             Some(val)
         } else {
             None
         };
         self.env.define(name, value);
-        Ok(None)
+        Ok(())
     }
 
-    fn visit_block_stmt(&mut self, list: &[Stmt]) -> Result<Option<Value>, Error> {
+    fn visit_block_stmt(&mut self, list: &[Stmt]) -> Result<(), Error> {
         trace!("visit_block_stmt {:?}", list);
         self.execute_block(list)?;
-        Ok(None)
+        Ok(())
     }
     
     fn visit_if_stmt(
@@ -173,31 +181,26 @@ impl StmtVisitor<Option<Value>> for Interpreter {
         test: &Expr,
         cons: &Stmt,
         alt: &Option<Box<Stmt>>,
-    ) -> Result<Option<Value>, Error> {
+    ) -> Result<(), Error> {
         trace!("visit_if_stmt {:?} {:?} {:?}", test, cons, alt);
         let boolean = self.evaluate(test)?;
         if Self::is_truthy(&boolean) {
-            self.interpret(cons)
+            self.interpret(cons)?;
         } else if let Some(alt) = alt {
-            self.interpret(alt)
-        } else {
-            Ok(None)
+            self.interpret(alt)?;
         }
+        Ok(())
     }
 
-    fn visit_while_stmt(&mut self, test: &Expr, body: &Stmt) -> Result<Option<Value>, Error> {
+    fn visit_while_stmt(&mut self, test: &Expr, body: &Stmt) -> Result<(), Error> {
         trace!("visit_while_stmt {:?} {:?}", test, body);
         while Self::is_truthy(&self.evaluate(test)?) {
-            match self.interpret(body) {
-                Ok(Some(val)) => return Ok(Some(val)),
-                Err(e) => return Err(e),
-                _ => continue,
-            }
+            self.interpret(body)?;
         }
-        Ok(None)
+        Ok(())
     }
 
-    fn visit_func_decl(&mut self, name: &str, params: &[String], body: &[Stmt]) -> Result<Option<Value>, Error> {
+    fn visit_func_decl(&mut self, name: &str, params: &[String], body: &[Stmt]) -> Result<(), Error> {
         trace!("visit_func_decl {:?} {:?} {:?}", name, params, body);
         let func = Func {
             name: name.to_string(),
@@ -207,16 +210,17 @@ impl StmtVisitor<Option<Value>> for Interpreter {
         self.env.define(name.to_string(), Some(Value::Func(Rc::new(func))));
         let closure = self.env.clone();
         self.closures.insert(name.to_string(), closure);
-        Ok(None)
+        Ok(())
     }
 
-    fn visit_return_stmt(&mut self, expr: &Option<Expr>) -> Result<Option<Value>, Error> {
+    fn visit_return_stmt(&mut self, expr: &Option<Expr>) -> Result<(), Error> {
         trace!("visit_return_stmt {:?}", expr);
-        Ok(if let Some(expr) = expr {
-            Some(self.evaluate(expr)?)
+        let ret = if let Some(expr) = expr {
+            self.evaluate(expr)?
         } else {
-            Some(Value::Nil)
-        })
+            Value::Nil
+        };
+        Err(Error::Return(ret))
     }
 }
 
@@ -229,36 +233,29 @@ impl Interpreter {
         }
     }
 
-    pub fn interpret(&mut self, stmt: &Stmt) -> Result<Option<Value>, Error> {
+    pub fn interpret(&mut self, stmt: &Stmt) -> Result<(), Error> {
         self.recur += 1;
         let ret = stmt.accept(self);
         trace!("{} completing interpret {:?}", self.recur, ret);
         self.recur = self.recur.saturating_sub(1);
-        ret
+        ret?;
+        Ok(())
     }
 
     pub fn evaluate(&mut self, expr: &Expr) -> Result<Value, Error> {
         expr.accept(self)
     }
 
-    pub fn execute_block(&mut self, stmts: &[Stmt]) -> Result<Option<Value>, Error> {
+    pub fn execute_block(&mut self, stmts: &[Stmt]) -> Result<(), Error> {
         self.env.descend();
         for stmt in stmts {
-            match self.interpret(stmt) {
-                Ok(maybe) => {
-                    if let Some(val) = maybe {
-                        self.env.ascend();
-                        return Ok(Some(val));
-                    }
-                },
-                Err(e) => {
-                    self.env.ascend();
-                    return Err(e);
-                }
+            if let Err(e) = self.interpret(stmt) {
+                self.env.ascend();
+                return Err(e);
             }
         }
         self.env.ascend();
-        Ok(None)
+        Ok(())
     }
 
     fn is_truthy(lit: &Value) -> bool {
