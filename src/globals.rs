@@ -7,11 +7,13 @@ use crate::{
 use chrono::prelude::*;
 #[derive(Debug, Clone)]
 pub struct Clock;
-
+impl NativeFunc for Clock {}
+pub trait NativeFunc 
+where Self: Callable {}
 
 impl Callable for Clock {
     fn name(&self) -> &str {
-        "clock"
+        "[native func clock]"
     }
     fn call(&self, _: &mut Interpreter, _: &[Value]) -> Result<Value, Error> {
         let now = Local::now();
@@ -23,10 +25,9 @@ impl Callable for Clock {
 }
 #[derive(Debug, Clone)]
 pub struct Mod;
-
 impl Callable for Mod {
     fn name(&self) -> &str {
-        "mod"
+        "[native func mod]"
     }
     fn arity(&self) -> usize {
         2
@@ -41,3 +42,13 @@ impl Callable for Mod {
     }
 }
 
+impl ::std::fmt::Display for Clock {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        write!(f, "[native fn clock]")
+    }
+}
+impl ::std::fmt::Display for Mod {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        write!(f, "[native fn mod]")
+    }
+}

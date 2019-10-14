@@ -3,10 +3,10 @@ use crate::{
     error::Error,
     value::Value,
 };
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 pub trait Callable 
-where Self: Debug {
+where Self: Debug + Display {
     fn name(&self) -> &str {
         "unknown"
     }

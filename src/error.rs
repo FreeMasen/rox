@@ -1,9 +1,8 @@
-use std::sync::PoisonError;
-
 #[derive(Clone, Debug)]
 pub enum Error {
     Scanner(String),
     Parser(String),
+    Resolution(String),
     Runtime(String),
     Return(crate::value::Value)
 }
@@ -12,14 +11,9 @@ impl ::std::fmt::Display for Error {
         match self {
             Error::Scanner(s) => format!("Scanning error: {}", s).fmt(f),
             Error::Parser(s) => format!("Parser error: {}", s).fmt(f),
+            Error::Resolution(s) => format!("Runtime error: {}", s).fmt(f),
             Error::Runtime(s) => format!("Runtime error: {}", s).fmt(f),
             Error::Return(v) => v.fmt(f),
         }
-    }
-}
-impl ::std::error::Error for Error {}
-impl<T> From<PoisonError<T>> for Error {
-    fn from(other: PoisonError<T>) -> Self {
-        Error::Runtime(format!("boom! {}", other))
     }
 }

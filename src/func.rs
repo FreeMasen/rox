@@ -12,6 +12,7 @@ pub struct Func {
     pub name: String,
     pub params: Vec<String>,
     pub body: Vec<Stmt>,
+    pub env_id: usize,
 }
 
 impl Callable for Func {
@@ -23,7 +24,7 @@ impl Callable for Func {
     }
     fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         trace!("calling {}", self.name);
-        if let Some(closure) = int.closures.get_mut(&self.name) {
+        if let Some(closure) = int.closures.get_mut(self.env_id) {
             trace!("found closure for {}", &self.name);
             int.env.descend_into(closure.clone());
         } else {
@@ -41,8 +42,18 @@ impl Callable for Func {
             Err(e) => Err(e),
         };
         int.env.ascend(); // ascend out of function arg defs
-        int.closures.insert(self.name.to_string(), int.env.ascend_out_of()?);
+        if let Some(env) = int.closures.get_mut(self.env_id) {
+            *env = int.env.ascend_out_of()?;
+        } else {
+            int.closures.insert(self.env_id, int.env.ascend_out_of()?);
+        }
         ret
+    }
+}
+
+impl ::std::fmt::Display for Func {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        write!(f, "[fn {}]", self.name)
     }
 }
 

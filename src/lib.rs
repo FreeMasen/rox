@@ -15,6 +15,7 @@ mod callable;
 mod globals;
 mod func;
 mod value;
+mod class;
 
 pub use error::Error;
 use interpreter::Interpreter;

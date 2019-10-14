@@ -72,3 +72,10 @@ fun sayHi() {
 }
 
 sayHi();
+
+class Junk {
+  stuff() {
+    print "stuff";
+  }
+}
+print Junk;

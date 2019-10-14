@@ -1,6 +1,6 @@
 use super::error::Error;
 use super::expr::{Expr, Literal};
-use super::stmt::Stmt;
+use super::stmt::{Stmt, Function};
 use super::token::{Token, TokenType};
 use super::Scanner;
 use super::SimpleResult;
@@ -15,7 +15,7 @@ pub struct Parser {
 impl Parser {
     pub fn new(scanner: Scanner) -> Self {
         Self {
-            scanner: scanner,
+            scanner,
             tokens: vec![],
         }
     }
@@ -29,6 +29,8 @@ impl Parser {
             self.var_decl()
         } else if self.at(TokenType::Fun)? {
             self.fun_decl("function")
+        } else if self.at(TokenType::Class)? {
+            self.class_decl()
         } else {
             self.statement()
         }
@@ -67,6 +69,11 @@ impl Parser {
     }
 
     pub fn fun_decl(&mut self, kind: &str) -> SimpleResult<Stmt> {
+        let func = self.bare_func(kind)?;
+        Ok(Stmt::Func(func))
+    }
+
+    pub fn bare_func(&mut self, kind: &str) -> SimpleResult<Function> {
         let name = self.expect_ident()?;
         self.consume(TokenType::LeftParen, &format!("Expected ( after {} identifier", kind))?;
         let mut params = vec![];
@@ -82,10 +89,24 @@ impl Parser {
         self.consume(TokenType::RightParen, &format!("Expected ) after {} arguments", kind))?;
         self.consume(TokenType::LeftBrace, &format!("Expected {{ after {} arguments", kind))?;
         let body = self.bare_block()?;
-        Ok(Stmt::Func {
+        Ok(Function {
             name,
             params,
-            body
+            body,
+        })
+    }
+
+    pub fn class_decl(&mut self) -> SimpleResult<Stmt> {
+        let ident = self.expect_ident()?;
+        self.consume(TokenType::LeftBrace, &format!("Expected {{ after class name: {}", ident))?;
+        let mut methods = Vec::new();
+        while !self.is_at_end() && !self.check(TokenType::RightBrace) {
+            methods.push(self.bare_func("method")?);
+        }
+        self.consume(TokenType::RightBrace, &format!("Expected }} after class methods in {}", ident))?;
+        Ok(Stmt::Class {
+            name: ident,
+            methods,
         })
     }
 

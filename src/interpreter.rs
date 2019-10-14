@@ -1,22 +1,20 @@
 use super::{
+    class::Class,
     error::Error,
     expr::{Expr, ExprVisitor, Literal},
-    env::{Env},
+    env::Env,
     func::Func,
-    stmt::{Stmt, StmtVisitor},
+    stmt::{Function, Stmt, StmtVisitor},
     token::{Token, TokenType},
     value::Value,
 };
-use std::{
-    collections::HashMap,
-    rc::Rc,
-};
+use std::rc::Rc;
 
 use log::trace;
 
 pub struct Interpreter {
     pub env: Env,
-    pub closures: HashMap<String, Env>,
+    pub closures: Vec<Env>,
     pub recur: usize,
 }
 
@@ -206,10 +204,11 @@ impl StmtVisitor<()> for Interpreter {
             name: name.to_string(),
             params: params.to_vec(),
             body: body.to_vec(),
+            env_id: self.closures.len(),
         };
         self.env.define(name.to_string(), Some(Value::Func(Rc::new(func))));
         let closure = self.env.clone();
-        self.closures.insert(name.to_string(), closure);
+        self.closures.push(closure);
         Ok(())
     }
 
@@ -222,13 +221,24 @@ impl StmtVisitor<()> for Interpreter {
         };
         Err(Error::Return(ret))
     }
+    fn visit_class(&mut self, name: &str, methods: &[Function]) -> Result<(), Error> {
+        let class = Class {
+            name: name.to_string(),
+            methods: methods.to_vec(),
+        };
+        let callable = Rc::new(class);
+        let value = Value::Func(callable);
+        self.env.define(name.to_string(), Some(value));
+        
+        Ok(())
+    }
 }
 
 impl Interpreter {
     pub fn new() -> Self {
         Self {
             env: Env::root(),
-            closures: HashMap::new(),
+            closures: Vec::new(),
             recur: 0,
         }
     }

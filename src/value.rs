@@ -1,5 +1,6 @@
 use crate::{
     callable::Callable,
+    class::ClassInstance,
     expr::Literal
 };
 use std::rc::Rc;
@@ -11,6 +12,7 @@ pub enum Value {
     Bool(bool),
     Nil,
     Func(Rc<dyn Callable>),
+    Class(ClassInstance)
 }
 impl From<Literal> for Value {
     fn from(other: Literal) -> Self {
@@ -30,7 +32,8 @@ impl ::std::fmt::Display for Value {
             Value::Number(n) => n.fmt(f),
             Value::Bool(b) => b.fmt(f),
             Value::Nil => write!(f, "nil"),
-            Value::Func(func) => write!(f, "[fn {}]", func.name()),
+            Value::Func(func) => write!(f, "{}", func),
+            Value::Class(class) => write!(f, "[{}]", class.class.name)
         }
     }
 }

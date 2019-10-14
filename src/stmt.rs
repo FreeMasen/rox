@@ -17,12 +17,18 @@ pub enum Stmt {
         test: Expr,
         body: Box<Stmt>,
     },
-    Func {
+    Func(Function),
+    Return(Option<Expr>),
+    Class {
         name: String,
-        params: Vec<String>,
-        body: Vec<Stmt>,
+        methods: Vec<Function>,
     },
-    Return(Option<Expr>)
+}
+#[derive(Debug, Clone)]
+pub struct Function {
+    pub name: String,
+    pub params: Vec<String>,
+    pub body: Vec<Stmt>,
 }
 
 impl Stmt {
@@ -38,12 +44,12 @@ impl Stmt {
                 alternate,
             } => visitor.visit_if_stmt(test, consequence, alternate),
             Stmt::While { test, body } => visitor.visit_while_stmt(test, body),
-            Stmt::Func {
-                name,
-                params,
-                body
-            } => visitor.visit_func_decl(name, params, body),
+            Stmt::Func(Function { name, params, body}) => visitor.visit_func_decl(name, params, body),
             Stmt::Return(expr) => visitor.visit_return_stmt(expr),
+            Stmt::Class {
+                name,
+                methods,
+            } => visitor.visit_class(name, methods),
         }
     }
 }
@@ -62,4 +68,5 @@ pub trait StmtVisitor<T> {
     fn visit_while_stmt(&mut self, test: &Expr, body: &Stmt) -> Result<T, Error>;
     fn visit_func_decl(&mut self, name: &str, params: &[String], body: &[Stmt]) -> Result<T, Error>;
     fn visit_return_stmt(&mut self, expr: &Option<Expr>) -> Result<T, Error>;
+    fn visit_class(&mut self, name: &str, methods: &[Function]) -> Result<T, Error>;
 }
