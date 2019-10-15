@@ -1,6 +1,6 @@
 use super::error::Error;
 use super::expr::{Expr, Literal};
-use super::stmt::{Stmt, Function};
+use super::stmt::{Function, Stmt};
 use super::token::{Token, TokenType};
 use super::Scanner;
 use super::SimpleResult;
@@ -75,35 +75,49 @@ impl Parser {
 
     pub fn bare_func(&mut self, kind: &str) -> SimpleResult<Function> {
         let name = self.expect_ident()?;
-        self.consume(TokenType::LeftParen, &format!("Expected ( after {} identifier", kind))?;
+        self.consume(
+            TokenType::LeftParen,
+            &format!("Expected ( after {} identifier", kind),
+        )?;
         let mut params = vec![];
         if !self.check(TokenType::RightParen) {
             params.push(self.expect_ident()?);
             while self.at(TokenType::Comma)? {
                 params.push(self.expect_ident()?);
                 if params.len() > 255 {
-                    return Err(Error::Parser(format!("{} {:?} has too many parameters", kind, name)))
+                    return Err(Error::Parser(format!(
+                        "{} {:?} has too many parameters",
+                        kind, name
+                    )));
                 }
             }
         }
-        self.consume(TokenType::RightParen, &format!("Expected ) after {} arguments", kind))?;
-        self.consume(TokenType::LeftBrace, &format!("Expected {{ after {} arguments", kind))?;
+        self.consume(
+            TokenType::RightParen,
+            &format!("Expected ) after {} arguments", kind),
+        )?;
+        self.consume(
+            TokenType::LeftBrace,
+            &format!("Expected {{ after {} arguments", kind),
+        )?;
         let body = self.bare_block()?;
-        Ok(Function {
-            name,
-            params,
-            body,
-        })
+        Ok(Function { name, params, body })
     }
 
     pub fn class_decl(&mut self) -> SimpleResult<Stmt> {
         let ident = self.expect_ident()?;
-        self.consume(TokenType::LeftBrace, &format!("Expected {{ after class name: {}", ident))?;
+        self.consume(
+            TokenType::LeftBrace,
+            &format!("Expected {{ after class name: {}", ident),
+        )?;
         let mut methods = Vec::new();
         while !self.is_at_end() && !self.check(TokenType::RightBrace) {
             methods.push(self.bare_func("method")?);
         }
-        self.consume(TokenType::RightBrace, &format!("Expected }} after class methods in {}", ident))?;
+        self.consume(
+            TokenType::RightBrace,
+            &format!("Expected }} after class methods in {}", ident),
+        )?;
         Ok(Stmt::Class {
             name: ident,
             methods,
@@ -173,7 +187,10 @@ impl Parser {
         if let Some(expr) = update {
             w_body.push(Stmt::Expr(expr));
         }
-        let w = Stmt::While { test: cond, body: Box::new(Stmt::Block(w_body)) };
+        let w = Stmt::While {
+            test: cond,
+            body: Box::new(Stmt::Block(w_body)),
+        };
         block.push(w);
         Ok(Stmt::Block(block))
     }
@@ -210,7 +227,10 @@ impl Parser {
 
     pub fn expression_stmt(&mut self) -> SimpleResult<Stmt> {
         let value = self.expression()?;
-        self.consume(TokenType::Semicolon, &format!("Expected semi-colon after expression {:?}", value))?;
+        self.consume(
+            TokenType::Semicolon,
+            &format!("Expected semi-colon after expression {:?}", value),
+        )?;
         Ok(Stmt::Expr(value))
     }
 
@@ -221,9 +241,15 @@ impl Parser {
     fn assignment(&mut self) -> SimpleResult<Expr> {
         let expr = self.logical_or()?;
         if self.at(TokenType::Equal)? {
+            let value = self.assignment()?;
             if let Expr::Var(name) = expr {
-                let value = self.assignment()?;
                 Ok(Expr::assign(name, value))
+            } else if let Expr::Get { object, name } = expr {
+                Ok(Expr::Set {
+                    object,
+                    name,
+                    value: Box::new(value),
+                })
             } else {
                 Err(Error::Parser(format!(
                     "Expected ident before equals found {:?}",
@@ -314,6 +340,12 @@ impl Parser {
         loop {
             if self.at(TokenType::LeftParen)? {
                 expr = self.finish_call(expr)?;
+            } else if self.at(TokenType::Dot)? {
+                let name = self.expect_ident()?;
+                expr = Expr::Get {
+                    object: Box::new(expr),
+                    name,
+                };
             } else {
                 break;
             }

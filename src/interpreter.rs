@@ -1,8 +1,9 @@
 use super::{
+    callable::Callable,
     class::Class,
+    env::Env,
     error::Error,
     expr::{Expr, ExprVisitor, Literal},
-    env::Env,
     func::Func,
     stmt::{Function, Stmt, StmtVisitor},
     token::{Token, TokenType},
@@ -26,27 +27,15 @@ impl ExprVisitor<Value> for Interpreter {
         let left = self.evaluate(left)?;
         let right = self.evaluate(right)?;
         let ret = match (&op.kind, &left, &right) {
-            (TokenType::Minus, Value::Number(lhs), Value::Number(rhs)) => {
-                Value::Number(lhs - rhs)
-            }
-            (TokenType::Slash, Value::Number(lhs), Value::Number(rhs)) => {
-                Value::Number(lhs / rhs)
-            }
-            (TokenType::Star, Value::Number(lhs), Value::Number(rhs)) => {
-                Value::Number(lhs * rhs)
-            }
-            (TokenType::Plus, Value::Number(lhs), Value::Number(rhs)) => {
-                Value::Number(lhs + rhs)
-            }
-            (TokenType::Greater, Value::Number(lhs), Value::Number(rhs)) => {
-                Value::Bool(lhs > rhs)
-            }
+            (TokenType::Minus, Value::Number(lhs), Value::Number(rhs)) => Value::Number(lhs - rhs),
+            (TokenType::Slash, Value::Number(lhs), Value::Number(rhs)) => Value::Number(lhs / rhs),
+            (TokenType::Star, Value::Number(lhs), Value::Number(rhs)) => Value::Number(lhs * rhs),
+            (TokenType::Plus, Value::Number(lhs), Value::Number(rhs)) => Value::Number(lhs + rhs),
+            (TokenType::Greater, Value::Number(lhs), Value::Number(rhs)) => Value::Bool(lhs > rhs),
             (TokenType::GreaterEqual, Value::Number(lhs), Value::Number(rhs)) => {
                 Value::Bool(lhs >= rhs)
             }
-            (TokenType::Less, Value::Number(lhs), Value::Number(rhs)) => {
-                Value::Bool(lhs < rhs)
-            }
+            (TokenType::Less, Value::Number(lhs), Value::Number(rhs)) => Value::Bool(lhs < rhs),
             (TokenType::LessEqual, Value::Number(lhs), Value::Number(rhs)) => {
                 Value::Bool(lhs <= rhs)
             }
@@ -121,21 +110,51 @@ impl ExprVisitor<Value> for Interpreter {
     }
 
     fn visit_call(&mut self, callee: &Expr, arguments: &[Expr]) -> IntResult {
+        use crate::callable::Callable;
         trace!("visit_call {:?} {:?}", callee, arguments);
         let callee = self.evaluate(callee)?;
-        let args = arguments.iter().map(|e| self.evaluate(e)).collect::<Result<Vec<Value>, Error>>()?;
-        if let Value::Func(ref f) = callee {
-            if f.arity() != args.len() {
-                return Err(Error::Runtime(format!("{} was expecting {} arguments but {} were provided", f.name(), f.arity(), args.len())))
-            }
-            match f.call(self, &args) {
-                Ok(val) => Ok(val),
-                Err(Error::Return(ret)) => Ok(ret),
-                Err(e) => Err(e),
-            }
-        } else {
-            Err(Error::Runtime(format!("Attempt to call a something that is not a function {}", callee)))
+        let args = arguments
+            .iter()
+            .map(|e| self.evaluate(e))
+            .collect::<Result<Vec<Value>, Error>>()?;
+        match callee {
+            Value::Func(ref c) => {
+                self.handle_callable(c, &args)
+            },
+            Value::Init(ref c) => {
+                self.handle_callable(c, &args)
+            },
+            Value::Global(ref c) => {
+                self.handle_callable(c.as_ref(), &args)
+            },
+            _ => Err(Error::Runtime(format!(
+                "Attempt to call a something that is not a function {}",
+                callee
+            )))
         }
+    }
+    
+    fn visit_get(&mut self, object: &Expr, name: &str) -> IntResult {
+        trace!("visit_get {:?} {:?}", object, name);
+        if let Value::Class(class) = self.evaluate(object)? {
+            class.get(name)
+        } else {
+            Err(Error::Runtime(format!(
+                "cannot find property {} on {:?}",
+                name, object
+            )))
+        }
+    }
+    fn visit_set(&mut self, object: &Expr, name: &str, value: &Expr) -> IntResult {
+        trace!("visit_set {:?} {:?} {:?}", object, name, value);
+        if let Value::Class(mut class) = self.evaluate(object)? {
+            let value = self.evaluate(value)?;
+            class.set(name, value.clone());
+            Ok(value)
+        } else {
+            Err(Error::Runtime(format!("Error attempting to set {} on {:?}", name, object)))
+        }
+
     }
 }
 
@@ -156,8 +175,7 @@ impl StmtVisitor<()> for Interpreter {
         trace!("visit_var_stmt {:?} {:?}", name, expr);
         let value = if let Some(expr) = expr {
             let val = match expr.accept(self) {
-                Ok(val) 
-                | Err(Error::Return(val)) => val,
+                Ok(val) | Err(Error::Return(val)) => val,
                 Err(e) => return Err(e),
             };
             Some(val)
@@ -173,7 +191,7 @@ impl StmtVisitor<()> for Interpreter {
         self.execute_block(list)?;
         Ok(())
     }
-    
+
     fn visit_if_stmt(
         &mut self,
         test: &Expr,
@@ -198,7 +216,12 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn visit_func_decl(&mut self, name: &str, params: &[String], body: &[Stmt]) -> Result<(), Error> {
+    fn visit_func_decl(
+        &mut self,
+        name: &str,
+        params: &[String],
+        body: &[Stmt],
+    ) -> Result<(), Error> {
         trace!("visit_func_decl {:?} {:?} {:?}", name, params, body);
         let func = Func {
             name: name.to_string(),
@@ -206,7 +229,8 @@ impl StmtVisitor<()> for Interpreter {
             body: body.to_vec(),
             env_id: self.closures.len(),
         };
-        self.env.define(name.to_string(), Some(Value::Func(Rc::new(func))));
+        self.env
+            .define(name.to_string(), Some(Value::Func(func)));
         let closure = self.env.clone();
         self.closures.push(closure);
         Ok(())
@@ -222,14 +246,13 @@ impl StmtVisitor<()> for Interpreter {
         Err(Error::Return(ret))
     }
     fn visit_class(&mut self, name: &str, methods: &[Function]) -> Result<(), Error> {
+        self.env.define(name.to_string(), None);
         let class = Class {
             name: name.to_string(),
             methods: methods.to_vec(),
         };
-        let callable = Rc::new(class);
-        let value = Value::Func(callable);
-        self.env.define(name.to_string(), Some(value));
-        
+        let value = Value::Init(class);
+        self.env.assign(name, value);
         Ok(())
     }
 }
@@ -268,6 +291,24 @@ impl Interpreter {
         Ok(())
     }
 
+    fn handle_callable<T>(&mut self, f: &T, arguments: &[Value]) -> Result<Value, Error> 
+    where T: Callable + ?Sized {
+        if f.arity() != arguments.len() {
+            return Err(Error::Runtime(format!(
+                "{} was expecting {} arguments but {} were provided",
+                f.name(),
+                f.arity(),
+                arguments.len()
+            )));
+        }
+        
+        match f.call(self, arguments) {
+            Ok(val) => Ok(val),
+            Err(Error::Return(ret)) => Ok(ret),
+            Err(e) => Err(e),
+        }
+    }
+
     fn is_truthy(lit: &Value) -> bool {
         match lit {
             Value::Nil => false,
@@ -287,7 +328,6 @@ impl Interpreter {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -301,9 +341,8 @@ while (i < 100) {
 }
 ";
         let mut int = Interpreter::new();
-        let mut parser = crate::parser::Parser::new(
-            crate::scanner::Scanner::new(lox.into()).unwrap()
-        );
+        let mut parser =
+            crate::parser::Parser::new(crate::scanner::Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
             int.interpret(&stmt.unwrap()).unwrap();
         }
@@ -316,9 +355,8 @@ for (var i = 0; i < 10; i = i + 1) {
 }
 ";
         let mut int = Interpreter::new();
-        let mut parser = crate::parser::Parser::new(
-            crate::scanner::Scanner::new(lox.into()).unwrap()
-        );
+        let mut parser =
+            crate::parser::Parser::new(crate::scanner::Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
             int.interpret(&stmt.unwrap()).unwrap();
         }
@@ -340,9 +378,8 @@ var pre2 = mod(2, 2) == 0;
 var test2 = isEven(2);
 ";
         let mut int = Interpreter::new();
-        let mut parser = crate::parser::Parser::new(
-            crate::scanner::Scanner::new(lox.into()).unwrap()
-        );
+        let mut parser =
+            crate::parser::Parser::new(crate::scanner::Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
             int.interpret(&stmt.unwrap()).unwrap();
         }

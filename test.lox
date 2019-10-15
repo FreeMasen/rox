@@ -79,3 +79,6 @@ class Junk {
   }
 }
 print Junk;
+var junk = Junk();
+junk.name = "junk";
+print junk.name;

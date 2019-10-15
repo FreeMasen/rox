@@ -1,10 +1,4 @@
-use crate::{
-    callable::Callable,
-    error::Error,
-    interpreter::Interpreter,
-    stmt::Stmt,
-    value::Value,
-};
+use crate::{callable::Callable, error::Error, interpreter::Interpreter, stmt::Stmt, value::Value};
 use log::trace;
 
 #[derive(Debug, Clone)]
@@ -80,11 +74,12 @@ test = counter();
 test = counter();
 ";
         let mut int = Interpreter::new();
-        let mut p = crate::parser::Parser::new(crate::scanner::Scanner::new(lox.to_string()).unwrap());
+        let mut p =
+            crate::parser::Parser::new(crate::scanner::Scanner::new(lox.to_string()).unwrap());
         int.interpret(&p.next().unwrap().unwrap()).unwrap();
         int.interpret(&p.next().unwrap().unwrap()).unwrap();
         int.interpret(&p.next().unwrap().unwrap()).unwrap();
-        
+
         int.interpret(&p.next().unwrap().unwrap()).unwrap();
         let test = int.env.get("test").expect("Failed to get test from env");
         assert_eq!(test, Value::Number(1f64));

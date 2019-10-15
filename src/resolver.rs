@@ -87,6 +87,13 @@ impl StmtVisitor<()> for Resolver {
         }
         Ok(())
     }
+    fn visit_class(&mut self, name: &str, methods: &[Function]) -> Result<(), Error> {
+        self.define(name);
+        for meth in methods {
+            self.resolve_func(&meth.params, &meth.body, FuncType::Method)?;
+        }
+        Ok(())
+    }
 }
 
 impl ExprVisitor<()> for Resolver {
@@ -139,6 +146,16 @@ impl ExprVisitor<()> for Resolver {
         for arg in arguments {
             self.resolve_expr(arg)?;
         }
+        Ok(())
+    }
+    fn visit_get(&mut self, object: &Expr, name: &str) -> Result<(), Error> {
+        trace!("Resolver::visit_get {:?} {:?}", object, name);
+        self.resolve_expr(object)?;
+        Ok(())
+    }
+    fn visit_set(&mut self, object: &Expr, name: &str, value: &Expr) -> Result<(), Error> {
+        self.resolve_expr(object)?;
+        self.resolve_expr(value)?;
         Ok(())
     }
 }

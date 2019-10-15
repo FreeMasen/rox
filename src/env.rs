@@ -1,8 +1,4 @@
-use crate::{
-    error::Error,
-    globals::*,
-    value::Value,
-};
+use crate::{error::Error, globals::*, value::Value};
 use std::collections::HashMap;
 use std::rc::Rc;
 #[derive(Debug, Clone)]
@@ -14,8 +10,8 @@ pub struct Env {
 impl Env {
     fn global() -> Self {
         let mut values = HashMap::new();
-        values.insert(String::from("clock"), Value::Func(Rc::new(Clock)));
-        values.insert(String::from("mod"), Value::Func(Rc::new(Mod)));
+        values.insert(String::from("clock"), Value::Global(Rc::new(Clock)));
+        values.insert(String::from("mod"), Value::Global(Rc::new(Mod)));
         let mut ret = Self::new();
         ret.values = values;
         ret
@@ -39,10 +35,10 @@ impl Env {
     pub fn with_cloned(env: &Env) -> Self {
         Self {
             values: HashMap::new(),
-            enclosing: Some(Box::new(env.clone()))
+            enclosing: Some(Box::new(env.clone())),
         }
     }
-    
+
     pub fn descend(&mut self) {
         let parent = ::std::mem::replace(self, Self::new());
         self.enclosing = Some(Box::new(parent));
@@ -57,7 +53,7 @@ impl Env {
         let parent = ::std::mem::replace(&mut self.enclosing, None);
         if let Some(parent) = parent {
             *self = *parent;
-        } 
+        }
     }
 
     pub fn ascend_out_of(&mut self) -> Result<Env, Error> {
@@ -67,7 +63,9 @@ impl Env {
             *self = *parent;
             Ok(ret)
         } else {
-            Err(Error::Runtime(format!("Error, attempted to ascend out of env with no parent")))
+            Err(Error::Runtime(format!(
+                "Error, attempted to ascend out of env with no parent"
+            )))
         }
     }
 
@@ -88,7 +86,10 @@ impl Env {
         } else if let Some(ref enc) = self.enclosing {
             enc.get(s)
         } else {
-            Err(Error::Runtime(format!("variable {:?} is not yet defined", s)))
+            Err(Error::Runtime(format!(
+                "variable {:?} is not yet defined",
+                s
+            )))
         }
     }
 
@@ -98,7 +99,10 @@ impl Env {
         } else if let Some(ref mut enc) = self.enclosing {
             enc.get_mut(s)
         } else {
-            Err(Error::Runtime(format!("variable {:?} is not yet defined", s)))
+            Err(Error::Runtime(format!(
+                "variable {:?} is not yet defined",
+                s
+            )))
         }
     }
 }

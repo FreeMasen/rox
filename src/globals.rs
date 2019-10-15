@@ -1,15 +1,13 @@
-use crate::{
-    callable::Callable,
-    error::Error,
-    interpreter::Interpreter,
-    value::Value,
-};
+use crate::{callable::Callable, error::Error, interpreter::Interpreter, value::Value};
 use chrono::prelude::*;
 #[derive(Debug, Clone)]
 pub struct Clock;
 impl NativeFunc for Clock {}
-pub trait NativeFunc 
-where Self: Callable {}
+pub trait NativeFunc
+where
+    Self: Callable,
+{
+}
 
 impl Callable for Clock {
     fn name(&self) -> &str {
@@ -38,7 +36,10 @@ impl Callable for Mod {
                 return Ok(Value::Number(lhs % rhs));
             }
         }
-        Err(Error::Runtime(format!("invalid arguments provided to mod: {:?}", args)))
+        Err(Error::Runtime(format!(
+            "invalid arguments provided to mod: {:?}",
+            args
+        )))
     }
 }
 

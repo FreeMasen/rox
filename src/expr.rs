@@ -1,8 +1,4 @@
-use crate::{
-    error::Error,
-    token::Token,
-    value::Value,
-};
+use crate::{error::Error, token::Token, value::Value};
 
 #[derive(Debug, Clone)]
 pub enum Expr {
@@ -30,7 +26,16 @@ pub enum Expr {
     Call {
         callee: Box<Expr>,
         arguments: Vec<Expr>,
-    }
+    },
+    Get {
+        object: Box<Expr>,
+        name: String,
+    },
+    Set {
+        object: Box<Expr>,
+        name: String,
+        value: Box<Expr>,
+    },
 }
 #[derive(Debug, Clone)]
 pub enum Literal {
@@ -75,10 +80,13 @@ impl Expr {
                 operator,
                 right,
             } => visitor.visit_log(left, operator, right),
-            Expr::Call {
-                callee,
-                arguments,
-            } => visitor.visit_call(callee, arguments),
+            Expr::Call { callee, arguments } => visitor.visit_call(callee, arguments),
+            Expr::Get { object, name } => visitor.visit_get(object, name),
+            Expr::Set {
+                object,
+                name,
+                value,
+            } => visitor.visit_set(object, name, value),
         }
     }
 
@@ -123,4 +131,6 @@ pub trait ExprVisitor<T> {
     fn visit_assign(&mut self, name: &str, value: &Expr) -> Result<T, Error>;
     fn visit_log(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<T, Error>;
     fn visit_call(&mut self, callee: &Expr, arguments: &[Expr]) -> Result<T, Error>;
+    fn visit_get(&mut self, object: &Expr, name: &str) -> Result<T, Error>;
+    fn visit_set(&mut self, object: &Expr, name: &str, value: &Expr) -> Result<T, Error>;
 }

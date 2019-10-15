@@ -4,7 +4,7 @@ pub enum Error {
     Parser(String),
     Resolution(String),
     Runtime(String),
-    Return(crate::value::Value)
+    Return(crate::value::Value),
 }
 impl ::std::fmt::Display for Error {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {

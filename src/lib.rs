@@ -1,21 +1,18 @@
+use log::{error, trace};
 use std::{fs::read_to_string, io::stdin, path::Path};
-use log::{
-    trace,
-    error,
-};
+mod callable;
+mod class;
+mod env;
 mod error;
 mod expr;
+mod func;
+mod globals;
 mod interpreter;
 mod parser;
 mod scanner;
 mod stmt;
 pub mod token;
-mod env;
-mod callable;
-mod globals;
-mod func;
 mod value;
-mod class;
 
 pub use error::Error;
 use interpreter::Interpreter;

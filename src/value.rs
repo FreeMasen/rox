@@ -1,8 +1,4 @@
-use crate::{
-    callable::Callable,
-    class::ClassInstance,
-    expr::Literal
-};
+use crate::{callable::Callable, class::{ClassInstance, Class}, expr::Literal, func::Func};
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
@@ -11,8 +7,10 @@ pub enum Value {
     Number(f64),
     Bool(bool),
     Nil,
-    Func(Rc<dyn Callable>),
-    Class(ClassInstance)
+    Func(Func),
+    Init(Class),
+    Global(Rc<dyn Callable>),
+    Class(ClassInstance),
 }
 impl From<Literal> for Value {
     fn from(other: Literal) -> Self {
@@ -33,7 +31,9 @@ impl ::std::fmt::Display for Value {
             Value::Bool(b) => b.fmt(f),
             Value::Nil => write!(f, "nil"),
             Value::Func(func) => write!(f, "{}", func),
-            Value::Class(class) => write!(f, "[{}]", class.class.name)
+            Value::Class(class) => write!(f, "[{} instance]", class.class.name),
+            Value::Init(class) => write!(f, "[ctor {}]", class.name()),
+            Value::Global(c) => write!(f, "[native fn {}]", c.name()),
         }
     }
 }
