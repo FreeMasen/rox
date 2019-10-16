@@ -1,5 +1,5 @@
 use crate::{callable::Callable, error::Error, interpreter::Interpreter, value::Value};
-use chrono::prelude::*;
+
 #[derive(Debug, Clone)]
 pub struct Clock;
 impl NativeFunc for Clock {}
@@ -11,14 +11,13 @@ where
 
 impl Callable for Clock {
     fn name(&self) -> &str {
-        "[native func clock]"
+        "clock"
     }
     fn call(&self, _: &mut Interpreter, _: &[Value]) -> Result<Value, Error> {
-        let now = Local::now();
-        let unix: DateTime<Local> = DateTime::from(::std::time::UNIX_EPOCH);
-        let dur = now.signed_duration_since(unix);
-        let mil = dur.num_milliseconds().abs() as u64;
-        Ok(Value::Number(mil as f64))
+        let now = ::std::time::SystemTime::now();
+        let dur = now.duration_since(::std::time::UNIX_EPOCH)
+            .map_err(|e| Error::Runtime(format!("Error calculating current timestamp:\n{}", e)))?;
+        Ok(Value::Number(dur.as_secs_f64() * 1000.0))
     }
 }
 #[derive(Debug, Clone)]
