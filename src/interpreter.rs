@@ -110,7 +110,6 @@ impl ExprVisitor<Value> for Interpreter {
     }
 
     fn visit_call(&mut self, callee: &Expr, arguments: &[Expr]) -> IntResult {
-        use crate::callable::Callable;
         trace!("visit_call {:?} {:?}", callee, arguments);
         let callee = self.evaluate(callee)?;
         let args = arguments
@@ -154,7 +153,6 @@ impl ExprVisitor<Value> for Interpreter {
         } else {
             Err(Error::Runtime(format!("Error attempting to set {} on {:?}", name, object)))
         }
-
     }
 }
 
@@ -252,11 +250,19 @@ impl StmtVisitor<()> for Interpreter {
             methods: methods.to_vec(),
         };
         let value = Value::Init(class);
-        self.env.assign(name, value);
+        self.env.assign(name, value)?;
         Ok(())
     }
 }
-
+impl Default for Interpreter {
+    fn default() -> Self {
+        Self {
+            env: Env::root(),
+            closures: Vec::new(),
+            recur: 0,
+        }
+    }
+}
 impl Interpreter {
     pub fn new() -> Self {
         Self {
