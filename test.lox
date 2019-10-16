@@ -82,3 +82,7 @@ print Junk;
 var junk = Junk();
 junk.name = "junk";
 print junk.name;
+junk.inner = Junk();
+junk.inner.name = "inner junk";
+
+print junk.inner.name;

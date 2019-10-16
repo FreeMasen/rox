@@ -9,7 +9,6 @@ use super::{
     token::{Token, TokenType},
     value::Value,
 };
-use std::rc::Rc;
 
 use log::trace;
 
@@ -124,7 +123,7 @@ impl ExprVisitor<Value> for Interpreter {
                 self.handle_callable(c, &args)
             },
             Value::Global(ref c) => {
-                self.handle_callable(c.as_ref(), &args)
+                self.handle_callable(c, &args)
             },
             _ => Err(Error::Runtime(format!(
                 "Attempt to call a something that is not a function {}",
@@ -146,13 +145,19 @@ impl ExprVisitor<Value> for Interpreter {
     }
     fn visit_set(&mut self, object: &Expr, name: &str, value: &Expr) -> IntResult {
         trace!("visit_set {:?} {:?} {:?}", object, name, value);
-        if let Value::Class(mut class) = self.evaluate(object)? {
-            let value = self.evaluate(value)?;
-            class.set(name, value.clone());
-            Ok(value)
-        } else {
-            Err(Error::Runtime(format!("Error attempting to set {} on {:?}", name, object)))
+        let value = self.evaluate(value)?;
+        if let Value::Class(inst) = self.evaluate_mut(object)? {
+            inst.set(name, value.clone());
         }
+        
+        Ok(value)
+        // if let Value::Class(mut class) = self.evaluate(object)? {
+            
+        //     class.set(name, value.clone());
+        //     Ok(value)
+        // } else {
+        //     Err(Error::Runtime(format!("Error attempting to set {} on {:?}", name, object)))
+        // }
     }
 }
 
@@ -283,6 +288,23 @@ impl Interpreter {
 
     pub fn evaluate(&mut self, expr: &Expr) -> Result<Value, Error> {
         expr.accept(self)
+    }
+
+    pub fn evaluate_mut(&mut self, expr: &Expr) -> Result<&mut Value, Error> {
+        match expr {
+            Expr::Var(name) => self.env.get_mut(name),
+            Expr::Get {
+                object,
+                name
+            } => {
+                if let Value::Class(inst) = self.evaluate_mut(object)? {
+                    inst.get_mut(name)
+                } else {
+                    Err(Error::Runtime(format!("Invalid left hand side of assignment")))
+                }
+            },
+            _ => Err(Error::Runtime(format!("Invalid left hand side of assignment")))
+        }
     }
 
     pub fn execute_block(&mut self, stmts: &[Stmt]) -> Result<(), Error> {

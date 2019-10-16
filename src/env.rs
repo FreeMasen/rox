@@ -1,6 +1,6 @@
-use crate::{error::Error, globals::*, value::Value};
+use crate::{error::Error, value::Value};
 use std::collections::HashMap;
-use std::rc::Rc;
+
 #[derive(Debug, Clone)]
 pub struct Env {
     values: HashMap<String, Value>,
@@ -10,8 +10,8 @@ pub struct Env {
 impl Env {
     fn global() -> Self {
         let mut values = HashMap::new();
-        values.insert(String::from("clock"), Value::Global(Rc::new(Clock)));
-        values.insert(String::from("mod"), Value::Global(Rc::new(Mod)));
+        values.insert(String::from("clock"), Value::clock());
+        values.insert(String::from("mod"), Value::modulo());
         let mut ret = Self::new();
         ret.values = values;
         ret

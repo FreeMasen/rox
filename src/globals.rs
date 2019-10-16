@@ -1,13 +1,43 @@
 use crate::{callable::Callable, error::Error, interpreter::Interpreter, value::Value};
 
 #[derive(Debug, Clone)]
-pub struct Clock;
-impl NativeFunc for Clock {}
-pub trait NativeFunc
-where
-    Self: Callable,
-{
+pub enum Global {
+    Clock(Clock),
+    Mod(Mod),
 }
+
+impl ::std::fmt::Display for Global {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            Global::Clock(c) => c.fmt(f),
+            Global::Mod(m) => m.fmt(f),
+        }
+    }
+}
+
+impl Callable for Global {
+    fn name(&self) -> &str {
+        match self {
+            Global::Clock(c) => c.name(),
+            Global::Mod(m) => m.name(),
+        }
+    }
+    fn arity(&self) -> usize {
+        match self {
+            Global::Clock(c) => c.arity(),
+            Global::Mod(m) => m.arity(),
+        }
+    }
+    fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
+        match self {
+            Global::Clock(c) => c.call(int, args),
+            Global::Mod(m) => m.call(int, args),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Clock;
 
 impl Callable for Clock {
     fn name(&self) -> &str {

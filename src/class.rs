@@ -51,6 +51,17 @@ impl ClassInstance {
             )))
         }
     }
+    pub fn get_mut(&mut self, key: &str) -> Result<&mut Value, Error> {
+        if let Some(val) = self.fields.get_mut(key) {
+            Ok(val)
+        } else {
+            Err(Error::Runtime(format!(
+                "Undefined propety on {} instance: {}",
+                self.class.name(),
+                key
+            )))
+        }
+    }
     pub fn set(&mut self, key: &str, value: Value) {
         if let Some(val) = self.fields.get_mut(key) {
             *val = value;

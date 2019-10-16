@@ -31,7 +31,10 @@ impl Lox {
         T: AsRef<Path>,
     {
         trace!("Running a file");
-        let lox = read_to_string(path).map_err(|e| Error::Runtime(format!("IO Error: {}", e)))?;
+        let mut lox = read_to_string(path).map_err(|e| Error::Runtime(format!("IO Error: {}", e)))?;
+        if !lox.ends_with("\n") {
+            lox.push('\n');
+        }
         let mut int = Interpreter::new();
         self.run(lox, &mut int)?;
         if self.had_error {

@@ -1,5 +1,9 @@
-use crate::{callable::Callable, class::{ClassInstance, Class}, expr::Literal, func::Func};
-use std::rc::Rc;
+use crate::{
+    callable::Callable, 
+    class::{ClassInstance, Class}, 
+    expr::Literal, func::Func,
+    globals::Global,
+};
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -9,7 +13,7 @@ pub enum Value {
     Nil,
     Func(Func),
     Init(Class),
-    Global(Rc<dyn Callable>),
+    Global(Global),
     Class(ClassInstance),
 }
 impl From<Literal> for Value {
@@ -49,4 +53,14 @@ impl ::std::cmp::PartialEq for Value {
             _ => false,
         }
     }
+}
+
+impl Value {
+    pub fn clock() -> Self {
+        Value::Global(Global::Clock(crate::globals::Clock))
+    }
+    pub fn modulo() -> Self {
+        Value::Global(Global::Mod(crate::globals::Mod))
+    }
+
 }
