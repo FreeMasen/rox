@@ -376,6 +376,8 @@ impl Parser {
                 || self.at_literal()?
             {
                 Expr::Literal(self.previous_literal()?)
+            } else if self.at(TokenType::This)? {
+                Expr::This
             } else if self.at_ident()? {
                 Expr::Var(self.previous_ident()?)
             } else if self.at(TokenType::LeftParen)? {

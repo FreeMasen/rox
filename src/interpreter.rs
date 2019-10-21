@@ -92,7 +92,17 @@ impl ExprVisitor<Value> for Interpreter {
     fn visit_assign(&mut self, name: &str, expr: &Expr) -> IntResult {
         trace!("visit_assign {:?} {:?}", name, expr);
         let val = self.evaluate(expr)?;
-        self.env.assign(name, val)
+        let capture = if let Value::Class(_) = val {
+            true
+        } else {
+            false
+        };
+        let ret = self.env.assign(name, val);
+        if capture {
+            self.env.alias("this", name);
+            self.closures.push(self.env.clone());
+        }
+        ret
     }
 
     fn visit_log(&mut self, left: &Expr, op: &Token, right: &Expr) -> IntResult {
@@ -122,7 +132,7 @@ impl ExprVisitor<Value> for Interpreter {
             Value::Init(ref c) => {
                 self.handle_callable(c, &args)
             },
-            Value::Global(ref c) => {
+            Value::NativeFunc(ref c) => {
                 self.handle_callable(c, &args)
             },
             _ => Err(Error::Runtime(format!(
@@ -151,13 +161,9 @@ impl ExprVisitor<Value> for Interpreter {
         }
         
         Ok(value)
-        // if let Value::Class(mut class) = self.evaluate(object)? {
-            
-        //     class.set(name, value.clone());
-        //     Ok(value)
-        // } else {
-        //     Err(Error::Runtime(format!("Error attempting to set {} on {:?}", name, object)))
-        // }
+    }
+    fn visit_this(&mut self) -> IntResult { 
+        unimplemented!() 
     }
 }
 
@@ -337,6 +343,8 @@ impl Interpreter {
         }
     }
 
+    // fn bind_func(&mut self, closure_id: usize, inst: ClassInstance) {}
+
     fn is_truthy(lit: &Value) -> bool {
         match lit {
             Value::Nil => false,
@@ -349,7 +357,7 @@ impl Interpreter {
         match (lhs, rhs) {
             (Value::Nil, Value::Nil) => true,
             (Value::String(l), Value::String(r)) => l == r,
-            (Value::Number(l), Value::Number(r)) => l == r,
+            (Value::Number(l), Value::Number(r)) => l.eq(r),
             (Value::Bool(l), Value::Bool(r)) => l == r,
             _ => false,
         }

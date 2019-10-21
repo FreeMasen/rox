@@ -2,7 +2,7 @@ use crate::{
     callable::Callable, 
     class::{ClassInstance, Class}, 
     expr::Literal, func::Func,
-    globals::Global,
+    globals::NativeFunc,
 };
 
 #[derive(Debug, Clone)]
@@ -13,7 +13,7 @@ pub enum Value {
     Nil,
     Func(Func),
     Init(Class),
-    Global(Global),
+    NativeFunc(NativeFunc),
     Class(ClassInstance),
 }
 impl From<Literal> for Value {
@@ -37,7 +37,7 @@ impl ::std::fmt::Display for Value {
             Value::Func(func) => write!(f, "{}", func),
             Value::Class(class) => write!(f, "[{} instance]", class.class.name),
             Value::Init(class) => write!(f, "[ctor {}]", class.name()),
-            Value::Global(c) => write!(f, "[native fn {}]", c.name()),
+            Value::NativeFunc(c) => write!(f, "[native fn {}]", c.name()),
         }
     }
 }
@@ -57,10 +57,10 @@ impl ::std::cmp::PartialEq for Value {
 
 impl Value {
     pub fn clock() -> Self {
-        Value::Global(Global::Clock(crate::globals::Clock))
+        Value::NativeFunc(NativeFunc::Clock(crate::globals::Clock))
     }
     pub fn modulo() -> Self {
-        Value::Global(Global::Mod(crate::globals::Mod))
+        Value::NativeFunc(NativeFunc::Mod(crate::globals::Mod))
     }
 
 }

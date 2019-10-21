@@ -5,6 +5,7 @@ use std::collections::HashMap;
 pub struct Env {
     values: HashMap<String, Value>,
     enclosing: Option<Box<Env>>,
+    aliases: HashMap<String, String>,
 }
 
 impl Env {
@@ -26,6 +27,7 @@ impl Env {
         Self {
             values: HashMap::new(),
             enclosing: None,
+            aliases: HashMap::new(),
         }
     }
 
@@ -33,10 +35,9 @@ impl Env {
     /// the provided value cloned into
     /// the `enclosing` property
     pub fn with_cloned(env: &Env) -> Self {
-        Self {
-            values: HashMap::new(),
-            enclosing: Some(Box::new(env.clone())),
-        }
+        let mut ret = Self::new();
+        ret.enclosing = Some(Box::new(env.clone()));
+        ret
     }
 
     pub fn descend(&mut self) {
@@ -63,7 +64,7 @@ impl Env {
             *self = *parent;
             Ok(ret)
         } else {
-            Err(Error::Runtime(format!(
+            Err(Error::Runtime(String::from(
                 "Error, attempted to ascend out of env with no parent"
             )))
         }
@@ -73,6 +74,10 @@ impl Env {
         let old = self.get_mut(s)?;
         *old = new.clone();
         Ok(new)
+    }
+
+    pub fn alias(&mut self, alias: &str, orig: &str) {
+        self.aliases.insert(alias.to_string(), orig.to_string());
     }
 
     pub fn define(&mut self, s: String, val: Option<Value>) {
@@ -85,6 +90,8 @@ impl Env {
             Ok(val.clone())
         } else if let Some(ref enc) = self.enclosing {
             enc.get(s)
+        } else if let Some(alias) = self.aliases.get(s) {
+            self.get(alias)
         } else {
             Err(Error::Runtime(format!(
                 "variable {:?} is not yet defined",
@@ -96,6 +103,8 @@ impl Env {
     pub fn get_mut(&mut self, s: &str) -> Result<&mut Value, Error> {
         if let Some(value) = self.values.get_mut(s) {
             Ok(value)
+        } else if let Some(alias) = self.aliases.get(s) {
+            panic!()
         } else if let Some(ref mut enc) = self.enclosing {
             enc.get_mut(s)
         } else {

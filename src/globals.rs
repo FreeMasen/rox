@@ -1,37 +1,37 @@
 use crate::{callable::Callable, error::Error, interpreter::Interpreter, value::Value};
 
 #[derive(Debug, Clone)]
-pub enum Global {
+pub enum NativeFunc {
     Clock(Clock),
     Mod(Mod),
 }
 
-impl ::std::fmt::Display for Global {
+impl ::std::fmt::Display for NativeFunc {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         match self {
-            Global::Clock(c) => c.fmt(f),
-            Global::Mod(m) => m.fmt(f),
+            NativeFunc::Clock(c) => c.fmt(f),
+            NativeFunc::Mod(m) => m.fmt(f),
         }
     }
 }
 
-impl Callable for Global {
+impl Callable for NativeFunc {
     fn name(&self) -> &str {
         match self {
-            Global::Clock(c) => c.name(),
-            Global::Mod(m) => m.name(),
+            NativeFunc::Clock(c) => c.name(),
+            NativeFunc::Mod(m) => m.name(),
         }
     }
     fn arity(&self) -> usize {
         match self {
-            Global::Clock(c) => c.arity(),
-            Global::Mod(m) => m.arity(),
+            NativeFunc::Clock(c) => c.arity(),
+            NativeFunc::Mod(m) => m.arity(),
         }
     }
     fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         match self {
-            Global::Clock(c) => c.call(int, args),
-            Global::Mod(m) => m.call(int, args),
+            NativeFunc::Clock(c) => c.call(int, args),
+            NativeFunc::Mod(m) => m.call(int, args),
         }
     }
 }

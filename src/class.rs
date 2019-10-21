@@ -7,11 +7,12 @@ pub struct Class {
     pub name: String,
     pub methods: Vec<Function>,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug,)]
 pub struct ClassInstance {
     pub class: Class,
     pub fields: HashMap<String, Value>,
     pub methods: HashMap<String, Func>,
+    pub closure_id: usize,
 }
 
 impl Callable for Class {
@@ -26,8 +27,11 @@ impl Callable for Class {
             fields: HashMap::new(),
             class: self.clone(),
             methods: HashMap::new(),
+            closure_id: int.closures.len(),
         };
-        Ok(Value::Class(ret))
+        let ret = Value::Class(ret);
+        int.closures.push(int.env.clone());
+        Ok(ret)
     }
 }
 
@@ -51,6 +55,7 @@ impl ClassInstance {
             )))
         }
     }
+    
     pub fn get_mut(&mut self, key: &str) -> Result<&mut Value, Error> {
         if let Some(val) = self.fields.get_mut(key) {
             Ok(val)

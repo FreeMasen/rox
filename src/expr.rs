@@ -36,6 +36,7 @@ pub enum Expr {
         name: String,
         value: Box<Expr>,
     },
+    This,
 }
 #[derive(Debug, Clone)]
 pub enum Literal {
@@ -87,6 +88,7 @@ impl Expr {
                 name,
                 value,
             } => visitor.visit_set(object, name, value),
+            Expr::This => visitor.visit_this(),
         }
     }
 
@@ -133,4 +135,5 @@ pub trait ExprVisitor<T> {
     fn visit_call(&mut self, callee: &Expr, arguments: &[Expr]) -> Result<T, Error>;
     fn visit_get(&mut self, object: &Expr, name: &str) -> Result<T, Error>;
     fn visit_set(&mut self, object: &Expr, name: &str, value: &Expr) -> Result<T, Error>;
+    fn visit_this(&mut self) -> Result<T, Error>;
 }
