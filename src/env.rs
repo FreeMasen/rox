@@ -101,10 +101,13 @@ impl Env {
     }
 
     pub fn get_mut(&mut self, s: &str) -> Result<&mut Value, Error> {
-        if let Some(value) = self.values.get_mut(s) {
+        let key = if let Some(alias) = self.aliases.get(s) {
+            alias
+        } else {
+            s
+        };
+        if let Some(value) = self.values.get_mut(key) {
             Ok(value)
-        } else if let Some(alias) = self.aliases.get(s) {
-            panic!()
         } else if let Some(ref mut enc) = self.enclosing {
             enc.get_mut(s)
         } else {
