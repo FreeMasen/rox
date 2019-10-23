@@ -1,6 +1,6 @@
 use crate::{
     callable::Callable, 
-    class::{ClassInstance, Class}, 
+    class::{ClassInstance, Class, Method}, 
     expr::Literal, func::Func,
     globals::NativeFunc,
 };
@@ -15,6 +15,7 @@ pub enum Value {
     Init(Class),
     NativeFunc(NativeFunc),
     Class(ClassInstance),
+    Method(Method)
 }
 impl From<Literal> for Value {
     fn from(other: Literal) -> Self {
@@ -38,6 +39,7 @@ impl ::std::fmt::Display for Value {
             Value::Class(class) => write!(f, "[{} instance]", class.class.name),
             Value::Init(class) => write!(f, "[ctor {}]", class.name()),
             Value::NativeFunc(c) => write!(f, "[native fn {}]", c.name()),
+            Value::Method(m) => write!(f, "{}", m),
         }
     }
 }

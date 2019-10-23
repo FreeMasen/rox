@@ -92,7 +92,12 @@ impl ExprVisitor<Value> for Interpreter {
 
     fn visit_assign(&mut self, name: &str, expr: &Expr) -> IntResult {
         trace!("visit_assign {:?} {:?}", name, expr);
-        let val = self.evaluate(expr)?;
+        let mut val = self.evaluate(expr)?;
+        if let Value::Class(ref mut inst) = val {
+            for (_, method) in inst.methods.iter_mut() {
+                method.this_name = name.to_string()
+            }
+        }
         self.env.assign(name, val)
     }
 
@@ -126,6 +131,9 @@ impl ExprVisitor<Value> for Interpreter {
             Value::NativeFunc(ref c) => {
                 self.handle_callable(c, &args)
             },
+            Value::Method(ref m) => {
+                self.handle_callable(m, &args)
+            }
             _ => Err(Error::Runtime(format!(
                 "Attempt to call a something that is not a function {}",
                 callee
