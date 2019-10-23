@@ -77,6 +77,9 @@ class Junk {
   stuff() {
     print "stuff";
   }
+  things(one) {
+    this.one = one;
+  }
 }
 print Junk;
 var junk = Junk();
@@ -84,5 +87,25 @@ junk.name = "junk";
 print junk.name;
 junk.inner = Junk();
 junk.inner.name = "inner junk";
-
+junk.stuff();
 print junk.inner.name;
+junk.things("haha");
+print junk.one;
+var x = 0;
+
+fun thing() {
+  x = x + 1;
+  print "thing";
+  print x;
+}
+print "zero";
+print x;
+x = x + 1;
+print "one";
+print x;
+thing();
+print "three";
+print x;
+x = x + 1;
+print x;
+thing();

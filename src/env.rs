@@ -6,6 +6,7 @@ pub struct Env {
     values: HashMap<String, Value>,
     enclosing: Option<Box<Env>>,
     aliases: HashMap<String, String>,
+    pub depth: usize,
 }
 
 impl Env {
@@ -13,21 +14,22 @@ impl Env {
         let mut values = HashMap::new();
         values.insert(String::from("clock"), Value::clock());
         values.insert(String::from("mod"), Value::modulo());
-        let mut ret = Self::new();
+        let mut ret = Self::new(0);
         ret.values = values;
         ret
     }
     pub fn root() -> Self {
         let globals = Self::global();
-        let mut ret = Self::new();
+        let mut ret = Self::new(1);
         ret.enclosing = Some(Box::new(globals));
         ret
     }
-    pub fn new() -> Self {
+    pub fn new(depth: usize) -> Self {
         Self {
             values: HashMap::new(),
             enclosing: None,
             aliases: HashMap::new(),
+            depth,
         }
     }
 
@@ -35,13 +37,13 @@ impl Env {
     /// the provided value cloned into
     /// the `enclosing` property
     pub fn with_cloned(env: &Env) -> Self {
-        let mut ret = Self::new();
+        let mut ret = Self::new(env.depth + 1);
         ret.enclosing = Some(Box::new(env.clone()));
         ret
     }
 
     pub fn descend(&mut self) {
-        let parent = ::std::mem::replace(self, Self::new());
+        let parent = ::std::mem::replace(self, Self::new(self.depth + 1));
         self.enclosing = Some(Box::new(parent));
     }
 
@@ -85,13 +87,16 @@ impl Env {
         self.values.insert(s, resolved);
     }
 
-    pub fn get(&self, s: &str) -> Result<Value, Error> {
+    pub fn get(&self, s: &str, id: usize) -> Result<Value, Error> {
+        while self.depth > id {
+            if let Some(ref inner) = self.enclosing {
+                return inner.get(s, id);
+            }
+        }
         if let Some(val) = self.values.get(s) {
             Ok(val.clone())
         } else if let Some(ref enc) = self.enclosing {
-            enc.get(s)
-        } else if let Some(alias) = self.aliases.get(s) {
-            self.get(alias)
+            enc.get(s, id)
         } else {
             Err(Error::Runtime(format!(
                 "variable {:?} is not yet defined",

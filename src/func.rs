@@ -18,14 +18,7 @@ impl Callable for Func {
     }
     fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         trace!("calling {}", self.name);
-        if let Some(closure) = int.closures.get_mut(self.env_id) {
-            trace!("found closure for {}", &self.name);
-            int.env.descend_into(closure.clone());
-        } else {
-            // this shouldn't be possible but there is no
-            // harm in it happening
-            int.env.descend();
-        }
+        int.current_depth = self.env_id;
         int.env.descend(); // create scope for function args
         for (name, value) in self.params.iter().cloned().zip(args.iter().cloned()) {
             int.env.define(name, Some(value));
@@ -36,11 +29,7 @@ impl Callable for Func {
             Err(e) => Err(e),
         };
         int.env.ascend(); // ascend out of function arg defs
-        if let Some(env) = int.closures.get_mut(self.env_id) {
-            *env = int.env.ascend_out_of()?;
-        } else {
-            int.closures.insert(self.env_id, int.env.ascend_out_of()?);
-        }
+        int.current_depth = int.env.depth;
         ret
     }
 }
@@ -81,10 +70,10 @@ test = counter();
         int.interpret(&p.next().unwrap().unwrap()).unwrap();
 
         int.interpret(&p.next().unwrap().unwrap()).unwrap();
-        let test = int.env.get("test").expect("Failed to get test from env");
+        let test = int.env.get("test", 1).expect("Failed to get test from env");
         assert_eq!(test, Value::Number(1f64));
         int.interpret(&p.next().unwrap().unwrap()).unwrap();
-        let test2 = int.env.get("test").expect("Failed to get test from env");
+        let test2 = int.env.get("test", 1).expect("Failed to get test from env");
         assert_eq!(test2, Value::Number(2f64));
         println!("test: {:?}", test);
     }

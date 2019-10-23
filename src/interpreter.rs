@@ -16,6 +16,7 @@ pub struct Interpreter {
     pub env: Env,
     pub closures: Vec<Env>,
     pub recur: usize,
+    pub current_depth: usize,
 }
 
 type IntResult = Result<Value, Error>;
@@ -86,23 +87,13 @@ impl ExprVisitor<Value> for Interpreter {
 
     fn visit_var(&mut self, name: &str) -> IntResult {
         trace!("visit_var {}", name);
-        self.env.get(name)
+        self.env.get(name, self.current_depth)
     }
 
     fn visit_assign(&mut self, name: &str, expr: &Expr) -> IntResult {
         trace!("visit_assign {:?} {:?}", name, expr);
         let val = self.evaluate(expr)?;
-        let capture = if let Value::Class(_) = val {
-            true
-        } else {
-            false
-        };
-        let ret = self.env.assign(name, val);
-        if capture {
-            self.env.alias("this", name);
-            self.closures.push(self.env.clone());
-        }
-        ret
+        self.env.assign(name, val)
     }
 
     fn visit_log(&mut self, left: &Expr, op: &Token, right: &Expr) -> IntResult {
@@ -163,7 +154,7 @@ impl ExprVisitor<Value> for Interpreter {
         Ok(value)
     }
     fn visit_this(&mut self) -> IntResult { 
-        unimplemented!() 
+        unimplemented!()
     }
 }
 
@@ -236,7 +227,7 @@ impl StmtVisitor<()> for Interpreter {
             name: name.to_string(),
             params: params.to_vec(),
             body: body.to_vec(),
-            env_id: self.closures.len(),
+            env_id: self.env.depth + 1,
         };
         self.env
             .define(name.to_string(), Some(Value::Func(func)));
@@ -267,8 +258,10 @@ impl StmtVisitor<()> for Interpreter {
 }
 impl Default for Interpreter {
     fn default() -> Self {
+        let env = Env::root();
         Self {
-            env: Env::root(),
+            current_depth: env.depth,
+            env: env,
             closures: Vec::new(),
             recur: 0,
         }
@@ -276,8 +269,10 @@ impl Default for Interpreter {
 }
 impl Interpreter {
     pub fn new() -> Self {
+        let env = Env::root();
         Self {
-            env: Env::root(),
+            current_depth: env.depth,
+            env,
             closures: Vec::new(),
             recur: 0,
         }
@@ -315,6 +310,7 @@ impl Interpreter {
 
     pub fn execute_block(&mut self, stmts: &[Stmt]) -> Result<(), Error> {
         self.env.descend();
+        self.current_depth = self.env.depth;
         for stmt in stmts {
             if let Err(e) = self.interpret(stmt) {
                 self.env.ascend();
@@ -322,6 +318,7 @@ impl Interpreter {
             }
         }
         self.env.ascend();
+        self.current_depth = self.env.depth;
         Ok(())
     }
 
@@ -419,11 +416,11 @@ var test2 = isEven(2);
         while let Some(stmt) = parser.next() {
             int.interpret(&stmt.unwrap()).unwrap();
         }
-        let test1 = int.env.get("test1").expect("Unable to get test1");
-        let pre1 = int.env.get("pre1").expect("Unable to get pre1");
+        let test1 = int.env.get("test1", 1).expect("Unable to get test1");
+        let pre1 = int.env.get("pre1", 1).expect("Unable to get pre1");
         assert_eq!(test1, pre1);
-        let test2 = int.env.get("test2").expect("Unable to get test");
-        let pre2 = int.env.get("pre2").expect("Unable to get pre2");
+        let test2 = int.env.get("test2", 1).expect("Unable to get test");
+        let pre2 = int.env.get("pre2", 1).expect("Unable to get pre2");
         assert_eq!(test2, pre2);
     }
 }

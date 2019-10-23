@@ -1,5 +1,5 @@
 use crate::{
-    callable::Callable, error::Error, interpreter::Interpreter, stmt::Function, value::Value, func::Func
+    callable::Callable, env::Env, error::Error, interpreter::Interpreter, stmt::Function, value::Value, func::Func
 };
 use std::collections::HashMap;
 #[derive(Clone, Debug)]
@@ -12,9 +12,14 @@ pub struct ClassInstance {
     pub class: Class,
     pub fields: HashMap<String, Value>,
     pub methods: HashMap<String, Func>,
-    pub closure_id: usize,
+    pub env: Env
 }
 
+#[derive(Clone, Debug)]
+pub struct Method {
+    pub func: Func,
+    pub this: HashMap<String, Value>,
+}
 impl Callable for Class {
     fn name(&self) -> &str {
         &self.name
@@ -23,14 +28,23 @@ impl Callable for Class {
         0
     }
     fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
+        let mut methods = HashMap::new();
+        for func in &self.methods {
+            methods.insert(func.name.to_string(), Func {
+                name: func.name.to_string(),
+                env_id: int.current_depth + 1,
+                params: func.params.clone(),
+                body: func.body.clone(),
+            });
+        }
         let ret = ClassInstance {
             fields: HashMap::new(),
             class: self.clone(),
-            methods: HashMap::new(),
-            closure_id: int.closures.len(),
+            methods: methods,
+            env: Env::new(int.current_depth),
         };
+        
         let ret = Value::Class(ret);
-        int.closures.push(int.env.clone());
         Ok(ret)
     }
 }
