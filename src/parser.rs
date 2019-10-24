@@ -106,6 +106,11 @@ impl Parser {
 
     pub fn class_decl(&mut self) -> SimpleResult<Stmt> {
         let ident = self.expect_ident()?;
+        let super_class = if self.at(TokenType::Less)? {
+            Some(self.expect_ident()?)
+        } else {
+            None
+        };
         self.consume(
             TokenType::LeftBrace,
             &format!("Expected {{ after class name: {}", ident),
@@ -121,6 +126,7 @@ impl Parser {
         Ok(Stmt::Class {
             name: ident,
             methods,
+            super_class
         })
     }
 

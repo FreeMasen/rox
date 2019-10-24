@@ -7,6 +7,7 @@ use std::collections::HashMap;
 pub struct Class {
     pub name: String,
     pub methods: Vec<Function>,
+    pub super_class: Option<Box<Class>>,
 }
 #[derive(Clone, Debug)]
 pub struct ClassInstance {

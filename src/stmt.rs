@@ -22,6 +22,7 @@ pub enum Stmt {
     Class {
         name: String,
         methods: Vec<Function>,
+        super_class: Option<String>,
     },
 }
 #[derive(Debug, Clone)]
@@ -48,7 +49,7 @@ impl Stmt {
                 visitor.visit_func_decl(name, params, body)
             }
             Stmt::Return(expr) => visitor.visit_return_stmt(expr),
-            Stmt::Class { name, methods } => visitor.visit_class(name, methods),
+            Stmt::Class { name, methods, super_class } => visitor.visit_class(name, methods, super_class),
         }
     }
 }
@@ -68,5 +69,5 @@ pub trait StmtVisitor<T> {
     fn visit_func_decl(&mut self, name: &str, params: &[String], body: &[Stmt])
         -> Result<T, Error>;
     fn visit_return_stmt(&mut self, expr: &Option<Expr>) -> Result<T, Error>;
-    fn visit_class(&mut self, name: &str, methods: &[Function]) -> Result<T, Error>;
+    fn visit_class(&mut self, name: &str, methods: &[Function], super_class: &Option<String>) -> Result<T, Error>;
 }

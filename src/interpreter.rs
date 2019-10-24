@@ -254,12 +254,22 @@ impl StmtVisitor<()> for Interpreter {
         };
         Err(Error::Return(ret))
     }
-    fn visit_class(&mut self, name: &str, methods: &[Function]) -> Result<(), Error> {
+    fn visit_class(&mut self, name: &str, methods: &[Function], super_class: &Option<String>) -> Result<(), Error> {
         trace!("visit_return_stmt {} {:?}", name, methods.len());
         self.env.define(name.to_string(), None);
+        let super_class = if let Some(ref s_class) = super_class {
+            if let Value::Init(c) = self.env.get(s_class, self.current_depth)? {
+                Some(Box::new(c))
+            } else {
+                return Err(Error::Runtime(format!("{} is attempting to inherit from something that is not a class: {}", name, s_class)));
+            }
+        } else {
+            None
+        };
         let class = Class {
             name: name.to_string(),
             methods: methods.to_vec(),
+            super_class,
         };
         let value = Value::Init(class);
         self.env.assign(name, value)?;
