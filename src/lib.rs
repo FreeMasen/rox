@@ -22,6 +22,11 @@ type SimpleResult<T> = Result<T, Error>;
 pub struct Lox {
     had_error: bool,
 }
+impl Default for Lox {
+    fn default() -> Self {
+        Self { had_error: false } 
+    }
+}
 impl Lox {
     pub fn new() -> Self {
         Self { had_error: false }
@@ -33,7 +38,7 @@ impl Lox {
         trace!("Running a file");
         let mut lox =
             read_to_string(path).map_err(|e| Error::Runtime(format!("IO Error: {}", e)))?;
-        if !lox.ends_with("\n") {
+        if !lox.ends_with('\n') {
             lox.push('\n');
         }
         let mut int = Interpreter::new();

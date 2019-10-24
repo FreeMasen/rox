@@ -309,15 +309,15 @@ impl Interpreter {
                 if let Value::Class(inst) = self.evaluate_mut(object)? {
                     inst.get_mut(name)
                 } else {
-                    Err(Error::Runtime(format!(
-                        "Invalid left hand side of assignment"
-                    )))
+                    Err(Error::Runtime(
+                        "Invalid left hand side of assignment".to_string(),
+                    ))
                 }
             }
             Expr::This => self.env.get_mut("this", self.current_depth),
-            _ => Err(Error::Runtime(format!(
-                "Invalid left hand side of assignment"
-            ))),
+            _ => Err(Error::Runtime(
+                "Invalid left hand side of assignment".to_string(),
+            )),
         }
     }
 

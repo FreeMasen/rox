@@ -119,26 +119,17 @@ impl Scanner {
                 self.line += 1;
                 return self.scan_token();
             }
-            Some('"') => {
-                let tok = self.string()?;
-                tok
-            }
+            Some('"') => self.string()?,
             Some(c) => {
                 if c.is_digit(10) {
-                    let tok = self.number()?;
-                    tok
+                    self.number()?
                 } else if c.is_alphabetic() {
-                    let tok = self.identifier()?;
-                    tok
+                    self.identifier()?
                 } else {
-                    let tok = self.unknown_token(c)?;
-                    tok
+                    self.unknown_token(c)?
                 }
             }
-            None => {
-                let tok = self.unknown_token('\0')?;
-                tok
-            }
+            None => self.unknown_token('\0')?,
         };
         let ret = ::std::mem::replace(&mut self.lookahead, Some(next));
         Ok(ret)
@@ -150,7 +141,7 @@ impl Scanner {
 
     pub fn advance(&mut self) -> Option<char> {
         self.current += 1;
-        self.source.get(self.current - 1).map(|c| *c)
+        self.source.get(self.current - 1).copied()
     }
 
     pub fn add_token(&mut self, kind: TokenType) -> Token {
@@ -168,17 +159,15 @@ impl Scanner {
     fn match_next(&mut self, e: char) -> bool {
         if self.is_at_end() {
             false
-        } else {
-            if let Some(c) = self.source.get(self.current) {
-                if *c != e {
-                    false
-                } else {
-                    self.current += 1;
-                    true
-                }
-            } else {
+        } else if let Some(c) = self.source.get(self.current) {
+            if *c != e {
                 false
+            } else {
+                self.current += 1;
+                true
             }
+        } else {
+            false
         }
     }
     pub fn peek(&self) -> char {
@@ -197,7 +186,7 @@ impl Scanner {
             let _ = self.advance();
         }
         if self.is_at_end() {
-            Err(Error::Scanner(format!("Unterminated string literal")))
+            Err(Error::Scanner("Unterminated string literal".to_string()))
         } else {
             let _ = self.advance();
             let text = self.source[self.start + 1..self.current - 1]

@@ -1,8 +1,7 @@
 use crate::{
-    callable::Callable, env::Env, error::Error, func::Func, interpreter::Interpreter,
-    stmt::Function, value::Value,
+    callable::Callable, error::Error, func::Func, interpreter::Interpreter, stmt::Function,
+    value::Value,
 };
-use log::trace;
 use std::collections::HashMap;
 #[derive(Clone, Debug)]
 pub struct Class {
@@ -14,7 +13,6 @@ pub struct ClassInstance {
     pub class: Class,
     pub fields: HashMap<String, Value>,
     pub methods: HashMap<String, Method>,
-    pub env: Env,
 }
 
 #[derive(Clone, Debug)]
@@ -55,17 +53,13 @@ impl Callable for Class {
             if meth.func.name == "init" {
                 init = Some(meth)
             } else {
-                methods.insert(
-                    def.name.to_string(),
-                    meth,
-                );
+                methods.insert(def.name.to_string(), meth);
             }
         }
         let ret = ClassInstance {
             fields: HashMap::new(),
             class: self.clone(),
             methods,
-            env: Env::new(int.current_depth),
         };
 
         if let Some(mut init) = init {

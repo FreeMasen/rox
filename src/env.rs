@@ -5,7 +5,6 @@ use std::collections::HashMap;
 pub struct Env {
     values: HashMap<String, Value>,
     enclosing: Option<Box<Env>>,
-    aliases: HashMap<String, String>,
     pub depth: usize,
 }
 
@@ -28,28 +27,13 @@ impl Env {
         Self {
             values: HashMap::new(),
             enclosing: None,
-            aliases: HashMap::new(),
             depth,
         }
-    }
-
-    /// Creates a new env with
-    /// the provided value cloned into
-    /// the `enclosing` property
-    pub fn with_cloned(env: &Env) -> Self {
-        let mut ret = Self::new(env.depth + 1);
-        ret.enclosing = Some(Box::new(env.clone()));
-        ret
     }
 
     pub fn descend(&mut self) {
         log::trace!("decending from, {}", self.depth);
         let parent = ::std::mem::replace(self, Self::new(self.depth + 1));
-        self.enclosing = Some(Box::new(parent));
-    }
-
-    pub fn descend_into(&mut self, other: Env) {
-        let parent = ::std::mem::replace(self, other);
         self.enclosing = Some(Box::new(parent));
     }
 
@@ -61,36 +45,10 @@ impl Env {
         }
     }
 
-    pub fn ascend_out_of(&mut self) -> Result<Env, Error> {
-        let parent = ::std::mem::replace(&mut self.enclosing, None);
-        if let Some(parent) = parent {
-            let ret = self.clone();
-            *self = *parent;
-            Ok(ret)
-        } else {
-            Err(Error::Runtime(String::from(
-                "Error, attempted to ascend out of env with no parent",
-            )))
-        }
-    }
-
-    pub fn assign_to(&mut self, s: &str, new: Value, depth: usize) -> Result<Value, Error> {
-        if self.depth >= depth {
-            if let Some(ref mut inner) = self.enclosing {
-                return inner.assign_to(s, new, depth)
-            }
-        }
-        self.assign(s, new)
-    }
-
     pub fn assign(&mut self, s: &str, new: Value) -> Result<Value, Error> {
         let old = self.get_mut(s, self.depth)?;
         *old = new.clone();
         Ok(new)
-    }
-
-    pub fn alias(&mut self, alias: &str, orig: &str) {
-        self.aliases.insert(alias.to_string(), orig.to_string());
     }
 
     pub fn define(&mut self, s: String, val: Option<Value>) {
@@ -99,15 +57,13 @@ impl Env {
     }
 
     pub fn get(&self, s: &str, id: usize) -> Result<Value, Error> {
-        log::trace!("{}: {:#?}",id, self.depth);
-        let _ = self.old_get(s);
+        log::trace!("{}: {:#?}", id, self.depth);
         if self.depth > id {
             if let Some(ref inner) = self.enclosing {
                 return inner.get(s, id);
             }
         }
         if let Some(val) = self.values.get(s) {
-            println!("found value for {} at depth {}, depth passed in: {}", s, self.depth, id);
             Ok(val.clone())
         } else if let Some(ref enc) = self.enclosing {
             enc.get(s, id)
@@ -119,32 +75,13 @@ impl Env {
         }
     }
 
-    fn old_get(&self, s: &str) -> Result<Value, Error> {
-        if let Some(val) = self.values.get(s) {
-            println!("found value for {} at depth {}", s, self.depth);
-            Ok(val.clone())
-        } else if let Some(ref enc) = self.enclosing {
-            enc.old_get(s)
-        } else {
-            Err(Error::Runtime(format!(
-                "variable {:?} is not yet defined",
-                s
-            )))
-        }
-    }
-
     pub fn get_mut(&mut self, s: &str, depth: usize) -> Result<&mut Value, Error> {
         if self.depth > depth {
             if let Some(ref mut inner) = self.enclosing {
-                return inner.get_mut(s, depth)
+                return inner.get_mut(s, depth);
             }
         }
-        let key = if let Some(alias) = self.aliases.get(s) {
-            alias
-        } else {
-            s
-        };
-        if let Some(value) = self.values.get_mut(key) {
+        if let Some(value) = self.values.get_mut(s) {
             Ok(value)
         } else if let Some(ref mut enc) = self.enclosing {
             enc.get_mut(s, depth)
