@@ -30,15 +30,18 @@
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=roxc",
+                    "--bin=roxi",
                     "--package=rox"
                 ],
                 "filter": {
-                    "name": "roxc",
+                    "name": "roxi",
                     "kind": "bin"
                 }
             },
-            "args": ["funcs.lox"],
+            "env": {
+                "RUST_LOG": "rox=trace"
+            },
+            "args": ["class.lox"],
             "cwd": "${workspaceFolder}"
         },
         {
@@ -59,7 +62,6 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}"
-        }
         },
         {
             "type": "lldb",

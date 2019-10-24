@@ -1,0 +1,21 @@
+
+class Junk {
+    init() {
+        print "new junk!";
+        this.two = "two";
+        this.nine = "haha";
+    }
+  stuff() {
+    print "stuff";
+  }
+  things(one) {
+    this.one = one;
+  }
+}
+print Junk;
+var junk = Junk();
+junk.stuff();
+print junk.stuff;
+junk.things("haha");
+print junk.one;
+print junk.nine;

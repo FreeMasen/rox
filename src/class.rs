@@ -1,18 +1,20 @@
 use crate::{
-    callable::Callable, env::Env, error::Error, interpreter::Interpreter, stmt::Function, value::Value, func::Func
+    callable::Callable, env::Env, error::Error, func::Func, interpreter::Interpreter,
+    stmt::Function, value::Value,
 };
+use log::trace;
 use std::collections::HashMap;
 #[derive(Clone, Debug)]
 pub struct Class {
     pub name: String,
     pub methods: Vec<Function>,
 }
-#[derive(Clone, Debug,)]
+#[derive(Clone, Debug)]
 pub struct ClassInstance {
     pub class: Class,
     pub fields: HashMap<String, Value>,
     pub methods: HashMap<String, Method>,
-    pub env: Env
+    pub env: Env,
 }
 
 #[derive(Clone, Debug)]
@@ -37,35 +39,64 @@ impl Callable for Class {
     }
     fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         let mut methods = HashMap::new();
-        for func in &self.methods {
+        let mut init: Option<Method> = None;
+        for def in &self.methods {
             let func = Func {
-                name: func.name.to_string(),
+                name: def.name.to_string(),
                 env_id: int.current_depth + 1,
-                params: func.params.clone(),
-                body: func.body.clone(),
+                params: def.params.clone(),
+                body: def.body.clone(),
             };
-            methods.insert(func.name.to_string(), Method {
+            let meth = Method {
                 func,
                 this_depth: int.current_depth,
-                this_name: String::new() // will get replaced at caller
-            });
+                this_name: String::new(), // will get replaced at caller
+            };
+            if meth.func.name == "init" {
+                init = Some(meth)
+            } else {
+                methods.insert(
+                    def.name.to_string(),
+                    meth,
+                );
+            }
         }
         let ret = ClassInstance {
             fields: HashMap::new(),
             class: self.clone(),
-            methods: methods,
+            methods,
             env: Env::new(int.current_depth),
         };
-        
-        let ret = Value::Class(ret);
-        Ok(ret)
+
+        if let Some(mut init) = init {
+            int.env.descend();
+            init.this_name = "*".to_string();
+            init.this_depth = int.env.depth;
+            let prev_depth = int.current_depth;
+            int.current_depth = int.env.depth;
+            int.env.define("*".to_string(), Some(Value::Class(ret)));
+            init.call(int, args)?;
+            let updated = int.env.get("*", int.env.depth)?;
+            int.env.ascend();
+            int.current_depth = prev_depth;
+            Ok(updated)
+        } else {
+            Ok(Value::Class(ret))
+        }
     }
 }
 
 impl Callable for Method {
+    fn name(&self) -> &str {
+        self.func.name()
+    }
+    fn arity(&self) -> usize {
+        self.func.arity()
+    }
     fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         let this = int.env.get(&self.this_name, self.this_depth)?;
         int.env.descend();
+        int.current_depth = int.env.depth;
         int.env.define("this".to_string(), Some(this));
         for (name, value) in self.func.params.iter().cloned().zip(args.iter().cloned()) {
             int.env.define(name, Some(value));
@@ -75,8 +106,9 @@ impl Callable for Method {
             Err(Error::Return(v)) => Ok(v),
             Err(e) => Err(e),
         };
-        let updated_this = int.env.get(&self.this_name, self.this_depth)?;
-        int.env.assign(&self.this_name, updated_this);
+        let updated_this = int.env.get("this", int.current_depth)?;
+        int.env.ascend();
+        int.env.assign(&self.this_name, updated_this)?;
         ret
     }
 }
@@ -101,7 +133,7 @@ impl ClassInstance {
             )))
         }
     }
-    
+
     pub fn get_mut(&mut self, key: &str) -> Result<&mut Value, Error> {
         if let Some(val) = self.fields.get_mut(key) {
             Ok(val)

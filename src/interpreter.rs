@@ -86,8 +86,8 @@ impl ExprVisitor<Value> for Interpreter {
     }
 
     fn visit_var(&mut self, name: &str) -> IntResult {
-        trace!("visit_var {}", name);
-        self.env.get(name, self.current_depth)
+        trace!("visit_var {}, {}", name, self.current_depth);
+        self.env.get(name, self.env.depth)
     }
 
     fn visit_assign(&mut self, name: &str, expr: &Expr) -> IntResult {
@@ -116,31 +116,26 @@ impl ExprVisitor<Value> for Interpreter {
 
     fn visit_call(&mut self, callee: &Expr, arguments: &[Expr]) -> IntResult {
         trace!("visit_call {:?} {:?}", callee, arguments);
+        let old_depth = self.current_depth;
         let callee = self.evaluate(callee)?;
         let args = arguments
             .iter()
             .map(|e| self.evaluate(e))
             .collect::<Result<Vec<Value>, Error>>()?;
-        match callee {
-            Value::Func(ref c) => {
-                self.handle_callable(c, &args)
-            },
-            Value::Init(ref c) => {
-                self.handle_callable(c, &args)
-            },
-            Value::NativeFunc(ref c) => {
-                self.handle_callable(c, &args)
-            },
-            Value::Method(ref m) => {
-                self.handle_callable(m, &args)
-            }
+        let ret = match callee {
+            Value::Func(ref c) => self.handle_callable(c, &args),
+            Value::Init(ref c) => self.handle_callable(c, &args),
+            Value::NativeFunc(ref c) => self.handle_callable(c, &args),
+            Value::Method(ref m) => self.handle_callable(m, &args),
             _ => Err(Error::Runtime(format!(
                 "Attempt to call a something that is not a function {}",
                 callee
-            )))
-        }
+            ))),
+        };
+        self.current_depth = old_depth;
+        ret
     }
-    
+
     fn visit_get(&mut self, object: &Expr, name: &str) -> IntResult {
         trace!("visit_get {:?} {:?}", object, name);
         if let Value::Class(class) = self.evaluate(object)? {
@@ -158,11 +153,12 @@ impl ExprVisitor<Value> for Interpreter {
         if let Value::Class(inst) = self.evaluate_mut(object)? {
             inst.set(name, value.clone());
         }
-        
+
         Ok(value)
     }
-    fn visit_this(&mut self) -> IntResult { 
-        unimplemented!()
+    fn visit_this(&mut self) -> IntResult {
+        trace!("visit_this");
+        self.env.get("this", self.current_depth)
     }
 }
 
@@ -182,10 +178,16 @@ impl StmtVisitor<()> for Interpreter {
     fn visit_var_stmt(&mut self, name: String, expr: Option<Expr>) -> Result<(), Error> {
         trace!("visit_var_stmt {:?} {:?}", name, expr);
         let value = if let Some(expr) = expr {
-            let val = match expr.accept(self) {
+            let mut val = match expr.accept(self) {
                 Ok(val) | Err(Error::Return(val)) => val,
                 Err(e) => return Err(e),
             };
+            trace!("defining {} with {}", name, val);
+            if let Value::Class(ref mut inst) = val {
+                for (_, meth) in inst.methods.iter_mut() {
+                    meth.this_name = name.to_string()
+                }
+            }
             Some(val)
         } else {
             None
@@ -237,8 +239,7 @@ impl StmtVisitor<()> for Interpreter {
             body: body.to_vec(),
             env_id: self.env.depth + 1,
         };
-        self.env
-            .define(name.to_string(), Some(Value::Func(func)));
+        self.env.define(name.to_string(), Some(Value::Func(func)));
         let closure = self.env.clone();
         self.closures.push(closure);
         Ok(())
@@ -254,6 +255,7 @@ impl StmtVisitor<()> for Interpreter {
         Err(Error::Return(ret))
     }
     fn visit_class(&mut self, name: &str, methods: &[Function]) -> Result<(), Error> {
+        trace!("visit_return_stmt {} {:?}", name, methods.len());
         self.env.define(name.to_string(), None);
         let class = Class {
             name: name.to_string(),
@@ -269,7 +271,7 @@ impl Default for Interpreter {
         let env = Env::root();
         Self {
             current_depth: env.depth,
-            env: env,
+            env,
             closures: Vec::new(),
             recur: 0,
         }
@@ -287,6 +289,7 @@ impl Interpreter {
     }
 
     pub fn interpret(&mut self, stmt: &Stmt) -> Result<(), Error> {
+        trace!("interpret: {:?}", stmt);
         self.recur += 1;
         let ret = stmt.accept(self);
         trace!("{} completing interpret {:?}", self.recur, ret);
@@ -301,22 +304,25 @@ impl Interpreter {
 
     pub fn evaluate_mut(&mut self, expr: &Expr) -> Result<&mut Value, Error> {
         match expr {
-            Expr::Var(name) => self.env.get_mut(name),
-            Expr::Get {
-                object,
-                name
-            } => {
+            Expr::Var(name) => self.env.get_mut(name, self.current_depth),
+            Expr::Get { object, name } => {
                 if let Value::Class(inst) = self.evaluate_mut(object)? {
                     inst.get_mut(name)
                 } else {
-                    Err(Error::Runtime(format!("Invalid left hand side of assignment")))
+                    Err(Error::Runtime(format!(
+                        "Invalid left hand side of assignment"
+                    )))
                 }
-            },
-            _ => Err(Error::Runtime(format!("Invalid left hand side of assignment")))
+            }
+            Expr::This => self.env.get_mut("this", self.current_depth),
+            _ => Err(Error::Runtime(format!(
+                "Invalid left hand side of assignment"
+            ))),
         }
     }
 
     pub fn execute_block(&mut self, stmts: &[Stmt]) -> Result<(), Error> {
+        let old_depth = self.current_depth;
         self.env.descend();
         self.current_depth = self.env.depth;
         for stmt in stmts {
@@ -326,29 +332,29 @@ impl Interpreter {
             }
         }
         self.env.ascend();
-        self.current_depth = self.env.depth;
+        self.current_depth = old_depth;
         Ok(())
     }
 
-    fn handle_callable<T>(&mut self, f: &T, arguments: &[Value]) -> Result<Value, Error> 
-    where T: Callable + ?Sized {
+    fn handle_callable<T>(&mut self, f: &T, arguments: &[Value]) -> Result<Value, Error>
+    where
+        T: Callable + ?Sized,
+    {
         if f.arity() != arguments.len() {
             return Err(Error::Runtime(format!(
                 "{} was expecting {} arguments but {} were provided",
-                f.name(),
+                f,
                 f.arity(),
                 arguments.len()
             )));
         }
-        
+
         match f.call(self, arguments) {
             Ok(val) => Ok(val),
             Err(Error::Return(ret)) => Ok(ret),
             Err(e) => Err(e),
         }
     }
-
-    // fn bind_func(&mut self, closure_id: usize, inst: ClassInstance) {}
 
     fn is_truthy(lit: &Value) -> bool {
         match lit {
@@ -403,6 +409,29 @@ for (var i = 0; i < 10; i = i + 1) {
         }
     }
 
+    #[test]
+    fn this() {
+        let _ = pretty_env_logger::try_init();
+        let lox = r#"
+class Junk {
+  stuff() {
+    print "stuff";
+  }
+  things(one) {
+    this.one = one;
+  }
+}
+var junk = Junk();
+junk.things("hahah");
+print junk.one;
+"#;
+        let mut int = Interpreter::new();
+        let mut parser =
+            crate::parser::Parser::new(crate::scanner::Scanner::new(lox.into()).unwrap());
+        while let Some(stmt) = parser.next() {
+            int.interpret(&stmt.unwrap()).unwrap();
+        }
+    }
     #[test]
     fn func_if() {
         let _ = pretty_env_logger::try_init();

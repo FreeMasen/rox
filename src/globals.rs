@@ -45,7 +45,8 @@ impl Callable for Clock {
     }
     fn call(&self, _: &mut Interpreter, _: &[Value]) -> Result<Value, Error> {
         let now = ::std::time::SystemTime::now();
-        let dur = now.duration_since(::std::time::UNIX_EPOCH)
+        let dur = now
+            .duration_since(::std::time::UNIX_EPOCH)
             .map_err(|e| Error::Runtime(format!("Error calculating current timestamp:\n{}", e)))?;
         Ok(Value::Number(dur.as_secs_f64() * 1000.0))
     }

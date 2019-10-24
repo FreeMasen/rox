@@ -1,0 +1,1400 @@
+   Compiling rox v0.1.0 (/home/rfm/projects/rox)
+warning: unused variable: `args`
+  --> src/class.rs:40:43
+   |
+40 |     fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
+   |                                           ^^^^ help: consider prefixing with an underscore: `_args`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+    Finished dev [unoptimized + debuginfo] target(s) in 1.10s
+     Running `target/debug/roxi ./class.lox`
+ TRACE rox > Running a file
+ TRACE rox::interpreter > interpret: Class { name: "Junk", methods: [Function { name: "stuff", params: [], body: [Print(Literal(String("stuff")))] }, Function { name: "things", params: ["one"], body: [Expr(Set { object: This, name: "one", value: Var("one") })] }] }
+ TRACE rox::interpreter > visit_return_stmt Junk 2
+ TRACE rox::interpreter > 1 completing interpret Ok(())
+ TRACE rox::interpreter > interpret: Print(Var("Junk"))
+ TRACE rox::interpreter > visit_expr_stmt Var("Junk")
+ TRACE rox::interpreter > visit_var Junk, 1
+ TRACE rox::interpreter > 1 completing interpret Ok(())
+ TRACE rox::interpreter > interpret: Var { name: "junk", value: Some(Call { callee: Var("Junk"), arguments: [] }) }
+ TRACE rox::interpreter > visit_var_stmt "junk" Some(Call { callee: Var("Junk"), arguments: [] })
+ TRACE rox::interpreter > visit_call Var("Junk") []
+ TRACE rox::interpreter > visit_var Junk, 1
+ TRACE rox::interpreter > defining junk with [Junk instance]
+ TRACE rox::interpreter > 1 completing interpret Ok(())
+ TRACE rox::interpreter > interpret: Expr(Call { callee: Get { object: Var("junk"), name: "stuff" }, arguments: [] })
+ TRACE rox::interpreter > visit_expr_stmt Call { callee: Get { object: Var("junk"), name: "stuff" }, arguments: [] }
+ TRACE rox::interpreter > visit_call Get { object: Var("junk"), name: "stuff" } []
+ TRACE rox::interpreter > visit_get Var("junk") "stuff"
+ TRACE rox::interpreter > visit_var junk, 1
+ TRACE rox::interpreter > interpret: Print(Literal(String("stuff")))
+ TRACE rox::interpreter > visit_expr_stmt Literal(String("stuff"))
+ TRACE rox::interpreter > visit_lit "stuff"
+ TRACE rox::interpreter > 2 completing interpret Ok(())
+ TRACE rox::class       > Class(ClassInstance { class: Class { name: "Junk", methods: [Function { name: "stuff", params: [], body: [Print(Literal(String("stuff")))] }, Function { name: "things", params: ["one"], body: [Expr(Set { object: This, name: "one", value: Var("one") })] }] }, fields: {}, methods: {"things": Method { func: Func { name: "things", params: ["one"], body: [Expr(Set { object: This, name: "one", value: Var("one") })], env_id: 2 }, this_depth: 1, this_name: "junk" }, "stuff": Method { func: Func { name: "stuff", params: [], body: [Print(Literal(String("stuff")))], env_id: 2 }, this_depth: 1, this_name: "junk" }}, env: Env { values: {}, enclosing: None, aliases: {}, depth: 1 } })
+ TRACE rox::interpreter > 1 completing interpret Ok(())
+ TRACE rox::interpreter > interpret: Print(Get { object: Var("junk"), name: "stuff" })
+ TRACE rox::interpreter > visit_expr_stmt Get { object: Var("junk"), name: "stuff" }
+ TRACE rox::interpreter > visit_get Var("junk") "stuff"
+ TRACE rox::interpreter > visit_var junk, 1
+ TRACE rox::env         > 1: Env {
+    values: {
+        "this": Class(
+            ClassInstance {
+                class: Class {
+                    name: "Junk",
+                    methods: [
+                        Function {
+                            name: "stuff",
+                            params: [],
+                            body: [
+                                Print(
+                                    Literal(
+                                        String(
+                                            "stuff",
+                                        ),
+                                    ),
+                                ),
+                            ],
+                        },
+                        Function {
+                            name: "things",
+                            params: [
+                                "one",
+                            ],
+                            body: [
+                                Expr(
+                                    Set {
+                                        object: This,
+                                        name: "one",
+                                        value: Var(
+                                            "one",
+                                        ),
+                                    },
+                                ),
+                            ],
+                        },
+                    ],
+                },
+                fields: {},
+                methods: {
+                    "things": Method {
+                        func: Func {
+                            name: "things",
+                            params: [
+                                "one",
+                            ],
+                            body: [
+                                Expr(
+                                    Set {
+                                        object: This,
+                                        name: "one",
+                                        value: Var(
+                                            "one",
+                                        ),
+                                    },
+                                ),
+                            ],
+                            env_id: 2,
+                        },
+                        this_depth: 1,
+                        this_name: "junk",
+                    },
+                    "stuff": Method {
+                        func: Func {
+                            name: "stuff",
+                            params: [],
+                            body: [
+                                Print(
+                                    Literal(
+                                        String(
+                                            "stuff",
+                                        ),
+                                    ),
+                                ),
+                            ],
+                            env_id: 2,
+                        },
+                        this_depth: 1,
+                        this_name: "junk",
+                    },
+                },
+                env: Env {
+                    values: {},
+                    enclosing: None,
+                    aliases: {},
+                    depth: 1,
+                },
+            },
+        ),
+    },
+    enclosing: Some(
+        Env {
+            values: {
+                "Junk": Init(
+                    Class {
+                        name: "Junk",
+                        methods: [
+                            Function {
+                                name: "stuff",
+                                params: [],
+                                body: [
+                                    Print(
+                                        Literal(
+                                            String(
+                                                "stuff",
+                                            ),
+                                        ),
+                                    ),
+                                ],
+                            },
+                            Function {
+                                name: "things",
+                                params: [
+                                    "one",
+                                ],
+                                body: [
+                                    Expr(
+                                        Set {
+                                            object: This,
+                                            name: "one",
+                                            value: Var(
+                                                "one",
+                                            ),
+                                        },
+                                    ),
+                                ],
+                            },
+                        ],
+                    },
+                ),
+                "junk": Class(
+                    ClassInstance {
+                        class: Class {
+                            name: "Junk",
+                            methods: [
+                                Function {
+                                    name: "stuff",
+                                    params: [],
+                                    body: [
+                                        Print(
+                                            Literal(
+                                                String(
+                                                    "stuff",
+                                                ),
+                                            ),
+                                        ),
+                                    ],
+                                },
+                                Function {
+                                    name: "things",
+                                    params: [
+                                        "one",
+                                    ],
+                                    body: [
+                                        Expr(
+                                            Set {
+                                                object: This,
+                                                name: "one",
+                                                value: Var(
+                                                    "one",
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                },
+                            ],
+                        },
+                        fields: {},
+                        methods: {
+                            "things": Method {
+                                func: Func {
+                                    name: "things",
+                                    params: [
+                                        "one",
+                                    ],
+                                    body: [
+                                        Expr(
+                                            Set {
+                                                object: This,
+                                                name: "one",
+                                                value: Var(
+                                                    "one",
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                    env_id: 2,
+                                },
+                                this_depth: 1,
+                                this_name: "junk",
+                            },
+                            "stuff": Method {
+                                func: Func {
+                                    name: "stuff",
+                                    params: [],
+                                    body: [
+                                        Print(
+                                            Literal(
+                                                String(
+                                                    "stuff",
+                                                ),
+                                            ),
+                                        ),
+                                    ],
+                                    env_id: 2,
+                                },
+                                this_depth: 1,
+                                this_name: "junk",
+                            },
+                        },
+                        env: Env {
+                            values: {},
+                            enclosing: None,
+                            aliases: {},
+                            depth: 1,
+                        },
+                    },
+                ),
+            },
+            enclosing: Some(
+                Env {
+                    values: {
+                        "mod": NativeFunc(
+                            Mod(
+                                Mod,
+                            ),
+                        ),
+                        "clock": NativeFunc(
+                            Clock(
+                                Clock,
+                            ),
+                        ),
+                    },
+                    enclosing: None,
+                    aliases: {},
+                    depth: 0,
+                },
+            ),
+            aliases: {},
+            depth: 1,
+        },
+    ),
+    aliases: {},
+    depth: 2,
+}
+ TRACE rox::interpreter > 1 completing interpret Ok(())
+ TRACE rox::interpreter > interpret: Expr(Call { callee: Get { object: Var("junk"), name: "things" }, arguments: [Literal(String("haha"))] })
+ TRACE rox::interpreter > visit_expr_stmt Call { callee: Get { object: Var("junk"), name: "things" }, arguments: [Literal(String("haha"))] }
+ TRACE rox::interpreter > visit_call Get { object: Var("junk"), name: "things" } [Literal(String("haha"))]
+ TRACE rox::interpreter > visit_get Var("junk") "things"
+ TRACE rox::interpreter > visit_var junk, 1
+ TRACE rox::env         > 1: Env {
+    values: {
+        "this": Class(
+            ClassInstance {
+                class: Class {
+                    name: "Junk",
+                    methods: [
+                        Function {
+                            name: "stuff",
+                            params: [],
+                            body: [
+                                Print(
+                                    Literal(
+                                        String(
+                                            "stuff",
+                                        ),
+                                    ),
+                                ),
+                            ],
+                        },
+                        Function {
+                            name: "things",
+                            params: [
+                                "one",
+                            ],
+                            body: [
+                                Expr(
+                                    Set {
+                                        object: This,
+                                        name: "one",
+                                        value: Var(
+                                            "one",
+                                        ),
+                                    },
+                                ),
+                            ],
+                        },
+                    ],
+                },
+                fields: {},
+                methods: {
+                    "things": Method {
+                        func: Func {
+                            name: "things",
+                            params: [
+                                "one",
+                            ],
+                            body: [
+                                Expr(
+                                    Set {
+                                        object: This,
+                                        name: "one",
+                                        value: Var(
+                                            "one",
+                                        ),
+                                    },
+                                ),
+                            ],
+                            env_id: 2,
+                        },
+                        this_depth: 1,
+                        this_name: "junk",
+                    },
+                    "stuff": Method {
+                        func: Func {
+                            name: "stuff",
+                            params: [],
+                            body: [
+                                Print(
+                                    Literal(
+                                        String(
+                                            "stuff",
+                                        ),
+                                    ),
+                                ),
+                            ],
+                            env_id: 2,
+                        },
+                        this_depth: 1,
+                        this_name: "junk",
+                    },
+                },
+                env: Env {
+                    values: {},
+                    enclosing: None,
+                    aliases: {},
+                    depth: 1,
+                },
+            },
+        ),
+    },
+    enclosing: Some(
+        Env {
+            values: {
+                "Junk": Init(
+                    Class {
+                        name: "Junk",
+                        methods: [
+                            Function {
+                                name: "stuff",
+                                params: [],
+                                body: [
+                                    Print(
+                                        Literal(
+                                            String(
+                                                "stuff",
+                                            ),
+                                        ),
+                                    ),
+                                ],
+                            },
+                            Function {
+                                name: "things",
+                                params: [
+                                    "one",
+                                ],
+                                body: [
+                                    Expr(
+                                        Set {
+                                            object: This,
+                                            name: "one",
+                                            value: Var(
+                                                "one",
+                                            ),
+                                        },
+                                    ),
+                                ],
+                            },
+                        ],
+                    },
+                ),
+                "junk": Class(
+                    ClassInstance {
+                        class: Class {
+                            name: "Junk",
+                            methods: [
+                                Function {
+                                    name: "stuff",
+                                    params: [],
+                                    body: [
+                                        Print(
+                                            Literal(
+                                                String(
+                                                    "stuff",
+                                                ),
+                                            ),
+                                        ),
+                                    ],
+                                },
+                                Function {
+                                    name: "things",
+                                    params: [
+                                        "one",
+                                    ],
+                                    body: [
+                                        Expr(
+                                            Set {
+                                                object: This,
+                                                name: "one",
+                                                value: Var(
+                                                    "one",
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                },
+                            ],
+                        },
+                        fields: {},
+                        methods: {
+                            "things": Method {
+                                func: Func {
+                                    name: "things",
+                                    params: [
+                                        "one",
+                                    ],
+                                    body: [
+                                        Expr(
+                                            Set {
+                                                object: This,
+                                                name: "one",
+                                                value: Var(
+                                                    "one",
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                    env_id: 2,
+                                },
+                                this_depth: 1,
+                                this_name: "junk",
+                            },
+                            "stuff": Method {
+                                func: Func {
+                                    name: "stuff",
+                                    params: [],
+                                    body: [
+                                        Print(
+                                            Literal(
+                                                String(
+                                                    "stuff",
+                                                ),
+                                            ),
+                                        ),
+                                    ],
+                                    env_id: 2,
+                                },
+                                this_depth: 1,
+                                this_name: "junk",
+                            },
+                        },
+                        env: Env {
+                            values: {},
+                            enclosing: None,
+                            aliases: {},
+                            depth: 1,
+                        },
+                    },
+                ),
+            },
+            enclosing: Some(
+                Env {
+                    values: {
+                        "mod": NativeFunc(
+                            Mod(
+                                Mod,
+                            ),
+                        ),
+                        "clock": NativeFunc(
+                            Clock(
+                                Clock,
+                            ),
+                        ),
+                    },
+                    enclosing: None,
+                    aliases: {},
+                    depth: 0,
+                },
+            ),
+            aliases: {},
+            depth: 1,
+        },
+    ),
+    aliases: {},
+    depth: 2,
+}
+ TRACE rox::interpreter > visit_lit "haha"
+ TRACE rox::env         > 1: Env {
+    values: {
+        "this": Class(
+            ClassInstance {
+                class: Class {
+                    name: "Junk",
+                    methods: [
+                        Function {
+                            name: "stuff",
+                            params: [],
+                            body: [
+                                Print(
+                                    Literal(
+                                        String(
+                                            "stuff",
+                                        ),
+                                    ),
+                                ),
+                            ],
+                        },
+                        Function {
+                            name: "things",
+                            params: [
+                                "one",
+                            ],
+                            body: [
+                                Expr(
+                                    Set {
+                                        object: This,
+                                        name: "one",
+                                        value: Var(
+                                            "one",
+                                        ),
+                                    },
+                                ),
+                            ],
+                        },
+                    ],
+                },
+                fields: {},
+                methods: {
+                    "things": Method {
+                        func: Func {
+                            name: "things",
+                            params: [
+                                "one",
+                            ],
+                            body: [
+                                Expr(
+                                    Set {
+                                        object: This,
+                                        name: "one",
+                                        value: Var(
+                                            "one",
+                                        ),
+                                    },
+                                ),
+                            ],
+                            env_id: 2,
+                        },
+                        this_depth: 1,
+                        this_name: "junk",
+                    },
+                    "stuff": Method {
+                        func: Func {
+                            name: "stuff",
+                            params: [],
+                            body: [
+                                Print(
+                                    Literal(
+                                        String(
+                                            "stuff",
+                                        ),
+                                    ),
+                                ),
+                            ],
+                            env_id: 2,
+                        },
+                        this_depth: 1,
+                        this_name: "junk",
+                    },
+                },
+                env: Env {
+                    values: {},
+                    enclosing: None,
+                    aliases: {},
+                    depth: 1,
+                },
+            },
+        ),
+    },
+    enclosing: Some(
+        Env {
+            values: {
+                "Junk": Init(
+                    Class {
+                        name: "Junk",
+                        methods: [
+                            Function {
+                                name: "stuff",
+                                params: [],
+                                body: [
+                                    Print(
+                                        Literal(
+                                            String(
+                                                "stuff",
+                                            ),
+                                        ),
+                                    ),
+                                ],
+                            },
+                            Function {
+                                name: "things",
+                                params: [
+                                    "one",
+                                ],
+                                body: [
+                                    Expr(
+                                        Set {
+                                            object: This,
+                                            name: "one",
+                                            value: Var(
+                                                "one",
+                                            ),
+                                        },
+                                    ),
+                                ],
+                            },
+                        ],
+                    },
+                ),
+                "junk": Class(
+                    ClassInstance {
+                        class: Class {
+                            name: "Junk",
+                            methods: [
+                                Function {
+                                    name: "stuff",
+                                    params: [],
+                                    body: [
+                                        Print(
+                                            Literal(
+                                                String(
+                                                    "stuff",
+                                                ),
+                                            ),
+                                        ),
+                                    ],
+                                },
+                                Function {
+                                    name: "things",
+                                    params: [
+                                        "one",
+                                    ],
+                                    body: [
+                                        Expr(
+                                            Set {
+                                                object: This,
+                                                name: "one",
+                                                value: Var(
+                                                    "one",
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                },
+                            ],
+                        },
+                        fields: {},
+                        methods: {
+                            "things": Method {
+                                func: Func {
+                                    name: "things",
+                                    params: [
+                                        "one",
+                                    ],
+                                    body: [
+                                        Expr(
+                                            Set {
+                                                object: This,
+                                                name: "one",
+                                                value: Var(
+                                                    "one",
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                    env_id: 2,
+                                },
+                                this_depth: 1,
+                                this_name: "junk",
+                            },
+                            "stuff": Method {
+                                func: Func {
+                                    name: "stuff",
+                                    params: [],
+                                    body: [
+                                        Print(
+                                            Literal(
+                                                String(
+                                                    "stuff",
+                                                ),
+                                            ),
+                                        ),
+                                    ],
+                                    env_id: 2,
+                                },
+                                this_depth: 1,
+                                this_name: "junk",
+                            },
+                        },
+                        env: Env {
+                            values: {},
+                            enclosing: None,
+                            aliases: {},
+                            depth: 1,
+                        },
+                    },
+                ),
+            },
+            enclosing: Some(
+                Env {
+                    values: {
+                        "mod": NativeFunc(
+                            Mod(
+                                Mod,
+                            ),
+                        ),
+                        "clock": NativeFunc(
+                            Clock(
+                                Clock,
+                            ),
+                        ),
+                    },
+                    enclosing: None,
+                    aliases: {},
+                    depth: 0,
+                },
+            ),
+            aliases: {},
+            depth: 1,
+        },
+    ),
+    aliases: {},
+    depth: 2,
+}
+ TRACE rox::interpreter > interpret: Expr(Set { object: This, name: "one", value: Var("one") })
+ TRACE rox::interpreter > visit_expr_stmt Set { object: This, name: "one", value: Var("one") }
+ TRACE rox::interpreter > visit_set This "one" Var("one")
+ TRACE rox::interpreter > visit_var one, 4
+ TRACE rox::interpreter > 2 completing interpret Ok(())
+ TRACE rox::class       > Class(ClassInstance { class: Class { name: "Junk", methods: [Function { name: "stuff", params: [], body: [Print(Literal(String("stuff")))] }, Function { name: "things", params: ["one"], body: [Expr(Set { object: This, name: "one", value: Var("one") })] }] }, fields: {"one": String("haha")}, methods: {"things": Method { func: Func { name: "things", params: ["one"], body: [Expr(Set { object: This, name: "one", value: Var("one") })], env_id: 2 }, this_depth: 1, this_name: "junk" }, "stuff": Method { func: Func { name: "stuff", params: [], body: [Print(Literal(String("stuff")))], env_id: 2 }, this_depth: 1, this_name: "junk" }}, env: Env { values: {}, enclosing: None, aliases: {}, depth: 1 } })
+ TRACE rox::interpreter > 1 completing interpret Ok(())
+ TRACE rox::interpreter > interpret: Print(Get { object: Var("junk"), name: "one" })
+ TRACE rox::interpreter > visit_expr_stmt Get { object: Var("junk"), name: "one" }
+ TRACE rox::interpreter > visit_get Var("junk") "one"
+ TRACE rox::interpreter > visit_var junk, 1
+ TRACE rox::env         > 1: Env {
+    values: {
+        "this": Class(
+            ClassInstance {
+                class: Class {
+                    name: "Junk",
+                    methods: [
+                        Function {
+                            name: "stuff",
+                            params: [],
+                            body: [
+                                Print(
+                                    Literal(
+                                        String(
+                                            "stuff",
+                                        ),
+                                    ),
+                                ),
+                            ],
+                        },
+                        Function {
+                            name: "things",
+                            params: [
+                                "one",
+                            ],
+                            body: [
+                                Expr(
+                                    Set {
+                                        object: This,
+                                        name: "one",
+                                        value: Var(
+                                            "one",
+                                        ),
+                                    },
+                                ),
+                            ],
+                        },
+                    ],
+                },
+                fields: {
+                    "one": String(
+                        "haha",
+                    ),
+                },
+                methods: {
+                    "things": Method {
+                        func: Func {
+                            name: "things",
+                            params: [
+                                "one",
+                            ],
+                            body: [
+                                Expr(
+                                    Set {
+                                        object: This,
+                                        name: "one",
+                                        value: Var(
+                                            "one",
+                                        ),
+                                    },
+                                ),
+                            ],
+                            env_id: 2,
+                        },
+                        this_depth: 1,
+                        this_name: "junk",
+                    },
+                    "stuff": Method {
+                        func: Func {
+                            name: "stuff",
+                            params: [],
+                            body: [
+                                Print(
+                                    Literal(
+                                        String(
+                                            "stuff",
+                                        ),
+                                    ),
+                                ),
+                            ],
+                            env_id: 2,
+                        },
+                        this_depth: 1,
+                        this_name: "junk",
+                    },
+                },
+                env: Env {
+                    values: {},
+                    enclosing: None,
+                    aliases: {},
+                    depth: 1,
+                },
+            },
+        ),
+        "one": String(
+            "haha",
+        ),
+    },
+    enclosing: Some(
+        Env {
+            values: {
+                "this": Class(
+                    ClassInstance {
+                        class: Class {
+                            name: "Junk",
+                            methods: [
+                                Function {
+                                    name: "stuff",
+                                    params: [],
+                                    body: [
+                                        Print(
+                                            Literal(
+                                                String(
+                                                    "stuff",
+                                                ),
+                                            ),
+                                        ),
+                                    ],
+                                },
+                                Function {
+                                    name: "things",
+                                    params: [
+                                        "one",
+                                    ],
+                                    body: [
+                                        Expr(
+                                            Set {
+                                                object: This,
+                                                name: "one",
+                                                value: Var(
+                                                    "one",
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                },
+                            ],
+                        },
+                        fields: {},
+                        methods: {
+                            "things": Method {
+                                func: Func {
+                                    name: "things",
+                                    params: [
+                                        "one",
+                                    ],
+                                    body: [
+                                        Expr(
+                                            Set {
+                                                object: This,
+                                                name: "one",
+                                                value: Var(
+                                                    "one",
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                    env_id: 2,
+                                },
+                                this_depth: 1,
+                                this_name: "junk",
+                            },
+                            "stuff": Method {
+                                func: Func {
+                                    name: "stuff",
+                                    params: [],
+                                    body: [
+                                        Print(
+                                            Literal(
+                                                String(
+                                                    "stuff",
+                                                ),
+                                            ),
+                                        ),
+                                    ],
+                                    env_id: 2,
+                                },
+                                this_depth: 1,
+                                this_name: "junk",
+                            },
+                        },
+                        env: Env {
+                            values: {},
+                            enclosing: None,
+                            aliases: {},
+                            depth: 1,
+                        },
+                    },
+                ),
+            },
+            enclosing: Some(
+                Env {
+                    values: {
+                        "Junk": Init(
+                            Class {
+                                name: "Junk",
+                                methods: [
+                                    Function {
+                                        name: "stuff",
+                                        params: [],
+                                        body: [
+                                            Print(
+                                                Literal(
+                                                    String(
+                                                        "stuff",
+                                                    ),
+                                                ),
+                                            ),
+                                        ],
+                                    },
+                                    Function {
+                                        name: "things",
+                                        params: [
+                                            "one",
+                                        ],
+                                        body: [
+                                            Expr(
+                                                Set {
+                                                    object: This,
+                                                    name: "one",
+                                                    value: Var(
+                                                        "one",
+                                                    ),
+                                                },
+                                            ),
+                                        ],
+                                    },
+                                ],
+                            },
+                        ),
+                        "junk": Class(
+                            ClassInstance {
+                                class: Class {
+                                    name: "Junk",
+                                    methods: [
+                                        Function {
+                                            name: "stuff",
+                                            params: [],
+                                            body: [
+                                                Print(
+                                                    Literal(
+                                                        String(
+                                                            "stuff",
+                                                        ),
+                                                    ),
+                                                ),
+                                            ],
+                                        },
+                                        Function {
+                                            name: "things",
+                                            params: [
+                                                "one",
+                                            ],
+                                            body: [
+                                                Expr(
+                                                    Set {
+                                                        object: This,
+                                                        name: "one",
+                                                        value: Var(
+                                                            "one",
+                                                        ),
+                                                    },
+                                                ),
+                                            ],
+                                        },
+                                    ],
+                                },
+                                fields: {
+                                    "one": String(
+                                        "haha",
+                                    ),
+                                },
+                                methods: {
+                                    "things": Method {
+                                        func: Func {
+                                            name: "things",
+                                            params: [
+                                                "one",
+                                            ],
+                                            body: [
+                                                Expr(
+                                                    Set {
+                                                        object: This,
+                                                        name: "one",
+                                                        value: Var(
+                                                            "one",
+                                                        ),
+                                                    },
+                                                ),
+                                            ],
+                                            env_id: 2,
+                                        },
+                                        this_depth: 1,
+                                        this_name: "junk",
+                                    },
+                                    "stuff": Method {
+                                        func: Func {
+                                            name: "stuff",
+                                            params: [],
+                                            body: [
+                                                Print(
+                                                    Literal(
+                                                        String(
+                                                            "stuff",
+                                                        ),
+                                                    ),
+                                                ),
+                                            ],
+                                            env_id: 2,
+                                        },
+                                        this_depth: 1,
+                                        this_name: "junk",
+                                    },
+                                },
+                                env: Env {
+                                    values: {},
+                                    enclosing: None,
+                                    aliases: {},
+                                    depth: 1,
+                                },
+                            },
+                        ),
+                    },
+                    enclosing: Some(
+                        Env {
+                            values: {
+                                "mod": NativeFunc(
+                                    Mod(
+                                        Mod,
+                                    ),
+                                ),
+                                "clock": NativeFunc(
+                                    Clock(
+                                        Clock,
+                                    ),
+                                ),
+                            },
+                            enclosing: None,
+                            aliases: {},
+                            depth: 0,
+                        },
+                    ),
+                    aliases: {},
+                    depth: 1,
+                },
+            ),
+            aliases: {},
+            depth: 2,
+        },
+    ),
+    aliases: {},
+    depth: 3,
+}
+ TRACE rox::env         > 1: Env {
+    values: {
+        "this": Class(
+            ClassInstance {
+                class: Class {
+                    name: "Junk",
+                    methods: [
+                        Function {
+                            name: "stuff",
+                            params: [],
+                            body: [
+                                Print(
+                                    Literal(
+                                        String(
+                                            "stuff",
+                                        ),
+                                    ),
+                                ),
+                            ],
+                        },
+                        Function {
+                            name: "things",
+                            params: [
+                                "one",
+                            ],
+                            body: [
+                                Expr(
+                                    Set {
+                                        object: This,
+                                        name: "one",
+                                        value: Var(
+                                            "one",
+                                        ),
+                                    },
+                                ),
+                            ],
+                        },
+                    ],
+                },
+                fields: {},
+                methods: {
+                    "things": Method {
+                        func: Func {
+                            name: "things",
+                            params: [
+                                "one",
+                            ],
+                            body: [
+                                Expr(
+                                    Set {
+                                        object: This,
+                                        name: "one",
+                                        value: Var(
+                                            "one",
+                                        ),
+                                    },
+                                ),
+                            ],
+                            env_id: 2,
+                        },
+                        this_depth: 1,
+                        this_name: "junk",
+                    },
+                    "stuff": Method {
+                        func: Func {
+                            name: "stuff",
+                            params: [],
+                            body: [
+                                Print(
+                                    Literal(
+                                        String(
+                                            "stuff",
+                                        ),
+                                    ),
+                                ),
+                            ],
+                            env_id: 2,
+                        },
+                        this_depth: 1,
+                        this_name: "junk",
+                    },
+                },
+                env: Env {
+                    values: {},
+                    enclosing: None,
+                    aliases: {},
+                    depth: 1,
+                },
+            },
+        ),
+    },
+    enclosing: Some(
+        Env {
+            values: {
+                "Junk": Init(
+                    Class {
+                        name: "Junk",
+                        methods: [
+                            Function {
+                                name: "stuff",
+                                params: [],
+                                body: [
+                                    Print(
+                                        Literal(
+                                            String(
+                                                "stuff",
+                                            ),
+                                        ),
+                                    ),
+                                ],
+                            },
+                            Function {
+                                name: "things",
+                                params: [
+                                    "one",
+                                ],
+                                body: [
+                                    Expr(
+                                        Set {
+                                            object: This,
+                                            name: "one",
+                                            value: Var(
+                                                "one",
+                                            ),
+                                        },
+                                    ),
+                                ],
+                            },
+                        ],
+                    },
+                ),
+                "junk": Class(
+                    ClassInstance {
+                        class: Class {
+                            name: "Junk",
+                            methods: [
+                                Function {
+                                    name: "stuff",
+                                    params: [],
+                                    body: [
+                                        Print(
+                                            Literal(
+                                                String(
+                                                    "stuff",
+                                                ),
+                                            ),
+                                        ),
+                                    ],
+                                },
+                                Function {
+                                    name: "things",
+                                    params: [
+                                        "one",
+                                    ],
+                                    body: [
+                                        Expr(
+                                            Set {
+                                                object: This,
+                                                name: "one",
+                                                value: Var(
+                                                    "one",
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                },
+                            ],
+                        },
+                        fields: {
+                            "one": String(
+                                "haha",
+                            ),
+                        },
+                        methods: {
+                            "things": Method {
+                                func: Func {
+                                    name: "things",
+                                    params: [
+                                        "one",
+                                    ],
+                                    body: [
+                                        Expr(
+                                            Set {
+                                                object: This,
+                                                name: "one",
+                                                value: Var(
+                                                    "one",
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                    env_id: 2,
+                                },
+                                this_depth: 1,
+                                this_name: "junk",
+                            },
+                            "stuff": Method {
+                                func: Func {
+                                    name: "stuff",
+                                    params: [],
+                                    body: [
+                                        Print(
+                                            Literal(
+                                                String(
+                                                    "stuff",
+                                                ),
+                                            ),
+                                        ),
+                                    ],
+                                    env_id: 2,
+                                },
+                                this_depth: 1,
+                                this_name: "junk",
+                            },
+                        },
+                        env: Env {
+                            values: {},
+                            enclosing: None,
+                            aliases: {},
+                            depth: 1,
+                        },
+                    },
+                ),
+            },
+            enclosing: Some(
+                Env {
+                    values: {
+                        "mod": NativeFunc(
+                            Mod(
+                                Mod,
+                            ),
+                        ),
+                        "clock": NativeFunc(
+                            Clock(
+                                Clock,
+                            ),
+                        ),
+                    },
+                    enclosing: None,
+                    aliases: {},
+                    depth: 0,
+                },
+            ),
+            aliases: {},
+            depth: 1,
+        },
+    ),
+    aliases: {},
+    depth: 2,
+}
+ TRACE rox::interpreter > 1 completing interpret Ok(())

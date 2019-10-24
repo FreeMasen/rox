@@ -1,7 +1,8 @@
 use crate::{
-    callable::Callable, 
-    class::{ClassInstance, Class, Method}, 
-    expr::Literal, func::Func,
+    callable::Callable,
+    class::{Class, ClassInstance, Method},
+    expr::Literal,
+    func::Func,
     globals::NativeFunc,
 };
 
@@ -15,7 +16,7 @@ pub enum Value {
     Init(Class),
     NativeFunc(NativeFunc),
     Class(ClassInstance),
-    Method(Method)
+    Method(Method),
 }
 impl From<Literal> for Value {
     fn from(other: Literal) -> Self {
@@ -64,5 +65,4 @@ impl Value {
     pub fn modulo() -> Self {
         Value::NativeFunc(NativeFunc::Mod(crate::globals::Mod))
     }
-
 }
