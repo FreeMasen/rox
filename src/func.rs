@@ -18,6 +18,7 @@ impl Callable for Func {
     }
     fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         trace!("calling {}", self.name);
+        let old_envs = int.env.revert_to(self.env_id)?;
         int.current_depth = self.env_id;
         int.env.descend(); // create scope for function args
         for (name, value) in self.params.iter().cloned().zip(args.iter().cloned()) {
@@ -29,6 +30,9 @@ impl Callable for Func {
             Err(e) => Err(e),
         };
         int.env.ascend(); // ascend out of function arg defs
+        for env in old_envs.into_iter().rev() {
+            int.env.descend_into(env);
+        }
         int.current_depth = int.env.depth;
         ret
     }

@@ -37,6 +37,33 @@ impl Env {
         self.enclosing = Some(Box::new(parent));
     }
 
+    pub fn ascend_out_of(&mut self) -> Result<Self, Error> {
+        let parent = ::std::mem::replace(&mut self.enclosing, None);
+        if let Some(parent) = parent {
+            let ret = std::mem::replace(self, *parent);
+            Ok(ret)
+        } else {
+            Err(Error::Runtime(String::from(
+                "Error, attempted to ascend out of env with no parent",
+            )))
+        }
+    }
+
+    pub fn revert_to(&mut self, depth: usize) -> Result<Vec<Self>, Error> {
+        let mut envs = vec![];
+        while self.depth > depth {
+            let old_self = self.ascend_out_of()?;
+            envs.push(old_self)
+        }
+        Ok(envs)
+    }
+
+    pub fn descend_into(&mut self, enc: Env) {
+        log::trace!("decending from, {}", self.depth);
+        let parent = ::std::mem::replace(self, enc);
+        self.enclosing = Some(Box::new(parent));
+    }
+
     pub fn ascend(&mut self) {
         log::trace!("ascending from, {}", self.depth);
         let parent = ::std::mem::replace(&mut self.enclosing, None);

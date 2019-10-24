@@ -136,7 +136,7 @@ impl Scanner {
     }
 
     fn unknown_token(&self, c: char) -> Result<Token, Error> {
-        Err(Error::Scanner(format!("unknown token found {}", c)))
+        Err(Error::Scanner(format!("unknown token found {:?}", c)))
     }
 
     pub fn advance(&mut self) -> Option<char> {
