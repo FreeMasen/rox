@@ -9,6 +9,7 @@ mod func;
 mod globals;
 mod interpreter;
 mod parser;
+mod resolver;
 mod scanner;
 mod stmt;
 pub mod token;
@@ -42,7 +43,8 @@ impl Lox {
             lox.push('\n');
         }
         let mut int = Interpreter::new();
-        self.run(lox, &mut int)?;
+        let mut resv = resolver::Resolver::new();
+        self.run(lox, &mut int, &mut resv)?;
         if self.had_error {
             ::std::process::exit(65);
         }
@@ -51,7 +53,8 @@ impl Lox {
     pub fn run_prompt(&mut self) -> SimpleResult<()> {
         trace!("Running a prompt");
         let reader = stdin();
-        let mut int = Interpreter::new();
+        let mut int = Interpreter::default();
+        let mut resv = resolver::Resolver::new();
         let mut indent = 0;
         loop {
             let mut line = String::new();
@@ -79,26 +82,21 @@ impl Lox {
                 }
                 write_prompt(indent);
             }
-            let _ = self.run(line, &mut int);
+            let _ = self.run(line, &mut int, &mut resv);
             self.had_error = false;
         }
     }
-    fn run(&mut self, s: String, int: &mut Interpreter) -> SimpleResult<()> {
+    fn run(&mut self, s: String, int: &mut Interpreter, resv: &mut resolver::Resolver) -> SimpleResult<()> {
         let scanner = Scanner::new(s)?;
 
-        let mut parser = parser::Parser::new(scanner);
-
-        while let Some(stmt) = parser.next() {
-            match &stmt {
-                Ok(stmt) => {
-                    int.interpret(&stmt)?;
-                }
-                Err(e) => {
-                    error!("Error: {}", e);
-                    self.error(parser.line(), e.clone());
-                    parser.sync();
-                }
-            }
+        let parser = parser::Parser::new(scanner);
+        let stmts: Vec<stmt::Stmt> = parser.collect::<Result<Vec<stmt::Stmt>, Error>>()?;
+        for stmt in &stmts {
+            resv.resolve_stmt(stmt)?;
+        }
+        int.locals = dbg!(resv.depths.clone());
+        for stmt in stmts {
+            int.interpret(&stmt)?;
         }
         Ok(())
     }

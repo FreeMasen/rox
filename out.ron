@@ -1,0 +1,59 @@
+﻿cargo :    Compiling rox v0.1.0 (C:\Users\rmasen\projects\rox)
+At line:1 char:1
++ cargo test nested -- --nocapture 2> out.ron
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Compiling ro...n\projects\rox):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+error[E0271]: type mismatch resolving `<&[std::collections::HashMap<std::string::String, value::Value>] as std::iter::IntoIterator>::Item == 
+std::collections::HashMap<std::string::String, value::Value>`
+
+  --> src\env.rs:34:19
+   |
+
+34 |         self.maps.extend(maps)
+
+
+   |                   ^^^^^^ expected reference, found struct `std::collections::HashMap`
+
+   |
+
+
+   = note: expected type `&std::collections::HashMap<std::string::String, value::Value>`
+
+              found type `std::collections::HashMap<std::string::String, value::Value>`
+
+
+error[E0271]: type mismatch resolving `<&[std::collections::HashMap<std::string::String, value::Value>] as std::iter::IntoIterator>::Item == 
+std::collections::HashMap<std::string::String, value::Value>`
+
+  --> src\env.rs:34:19
+   |
+34 |         self.maps.extend(maps)
+   |                   ^^^^^^ expected reference, found struct `std::collections::HashMap`
+   |
+   = note: expected type `&std::collections::HashMap<std::string::String, value::Value>`
+              found type `std::collections::HashMap<std::string::String, value::Value>`
+
+
+error: aborting due to previous error
+
+
+For more information about this error, try `rustc --explain E0271`.
+
+error: aborting due to previous error
+
+
+For more information about this error, try `rustc --explain E0271`.
+
+error
+: could not compile `rox`.
+
+warning:
+ build failed, waiting for other jobs to finish...
+
+error
+: could not compile `rox`.
+
+To learn more, run the command again with --verbose.
+

@@ -3,47 +3,43 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Env {
-    values: HashMap<String, Value>,
-    enclosing: Option<Box<Env>>,
-    pub depth: usize,
+    maps: Vec<HashMap<String, Value>>,
 }
 
+type Map = HashMap<String, Value>;
+
 impl Env {
-    fn global() -> Self {
+    pub fn depth(&self) -> usize {
+        self.maps.len()
+    }
+    fn global() -> Map {
         let mut values = HashMap::new();
         values.insert(String::from("clock"), Value::clock());
         values.insert(String::from("mod"), Value::modulo());
-        let mut ret = Self::new(0);
-        ret.values = values;
-        ret
+        values
     }
-    pub fn root() -> Self {
-        let globals = Self::global();
-        let mut ret = Self::new(1);
-        ret.enclosing = Some(Box::new(globals));
-        ret
-    }
-    pub fn new(depth: usize) -> Self {
+    
+    pub fn new() -> Self {
         Self {
-            values: HashMap::new(),
-            enclosing: None,
-            depth,
+            maps: vec![Self::global(), HashMap::new()],
         }
     }
     /// Create a new environment, setting the current environment
     /// to the `enclosing` 
     pub fn descend(&mut self) {
-        log::trace!("decending from, {}", self.depth);
-        let parent = ::std::mem::replace(self, Self::new(self.depth + 1));
-        self.enclosing = Some(Box::new(parent));
+        log::trace!("decending from, {}", self.maps.len());
+        self.maps.push(HashMap::new());
+    }
+    pub fn descend_into(&mut self, maps: Vec<Map>) {
+        self.maps.extend(maps)
     }
     /// Move the environment up one level, returning the
     /// old child environment
-    pub fn ascend_out_of(&mut self) -> Result<Self, Error> {
-        let parent = ::std::mem::replace(&mut self.enclosing, None);
-        if let Some(parent) = parent {
-            let ret = std::mem::replace(self, *parent);
-            Ok(ret)
+    pub fn ascend_out_of(&mut self) -> Result<Map, Error> {
+        if self.maps.len() > 1 {
+            // this should never fail because of
+            // the check above
+            Ok(self.maps.pop().unwrap())
         } else {
             Err(Error::Runtime(String::from(
                 "Error, attempted to ascend out of env with no parent",
@@ -73,81 +69,80 @@ impl Env {
     /// 
     /// return:[child 6, child 5, child 4, child 3]
     /// ```
-    pub fn revert_to(&mut self, depth: usize) -> Result<Vec<Self>, Error> {
+    pub fn revert_to(&mut self, depth: usize) -> Result<Vec<Map>, Error> {
+        log::trace!("reverting to {} from {}", depth, self.depth());
         let mut envs = vec![];
-        while self.depth > depth {
-            let old_self = self.ascend_out_of()?;
-            envs.push(old_self)
+        while self.maps.len() > depth {
+            envs.push(self.maps.pop().unwrap());
         }
         Ok(envs)
     }
-    /// Same as descend but uses the provided environment
-    /// for the new child
-    pub fn descend_into(&mut self, enc: Env) {
-        log::trace!("decending from, {}", self.depth);
-        let parent = ::std::mem::replace(self, enc);
-        self.enclosing = Some(Box::new(parent));
-    }
+
     /// Move up one level, discarding the old child environment
     pub fn ascend(&mut self) {
-        log::trace!("ascending from, {}", self.depth);
-        let parent = ::std::mem::replace(&mut self.enclosing, None);
-        if let Some(parent) = parent {
-            *self = *parent;
-        }
+        let _ = self.ascend_out_of();
     }
     /// Assign a new value to a previously defined
     /// variable
     pub fn assign(&mut self, s: &str, new: Value) -> Result<Value, Error> {
-        let old = self.get_mut(s, self.depth)?;
+        let old = self.get_mut(s, self.maps.len())?;
         *old = new.clone();
         Ok(new)
+    }
+    pub fn assign_at(&mut self, s: &str, new: Value, depth: usize) -> Result<(), Error> {
+        *self.get_mut(s, depth)? = new;
+        Ok(())
     }
     /// Define a new variable by name, setting to Nil if 
     /// no value is provided
     pub fn define(&mut self, s: String, val: Option<Value>) {
         let resolved = val.unwrap_or_else(|| Value::Nil);
-        self.values.insert(s, resolved);
+        if let Some(values) = self.maps.last_mut() {
+            values.insert(s, resolved);
+        }
     }
     /// Get a clone of a value from the environment
     /// skipping any environment's 
     /// who's depth is greater than the depth provided
     pub fn get(&self, s: &str, depth: usize) -> Result<Value, Error> {
-        log::trace!("{}: {:#?}", depth, self.depth);
-        if self.depth > depth {
-            if let Some(ref inner) = self.enclosing {
-                return inner.get(s, depth);
+        log::trace!("{}: {:#?}", depth, self.maps.len());
+        let maps = if let Some(i) = self.maps.get(0..depth) {
+            i
+        } else {
+            &self.maps
+        }.iter().rev();
+        for map in maps {
+            if let Some(val) = map.get(s) {
+                return Ok(val.clone());
             }
         }
-        if let Some(val) = self.values.get(s) {
-            Ok(val.clone())
-        } else if let Some(ref enc) = self.enclosing {
-            enc.get(s, depth)
-        } else {
-            Err(Error::Runtime(format!(
-                "variable {:?} is not yet defined",
-                s
-            )))
-        }
+        Err(Error::Runtime(format!(
+            "variable {:?} is not yet defined",
+            s
+        )))
     }
     /// Get a mutable reference to a value in the
     /// environment, skipping any environment's 
     /// who's depth is greater than the depth provided
     pub fn get_mut(&mut self, s: &str, depth: usize) -> Result<&mut Value, Error> {
-        if self.depth > depth {
-            if let Some(ref mut inner) = self.enclosing {
-                return inner.get_mut(s, depth);
+        if self.depth() >= depth {
+            for map in self.maps.iter_mut().rev() {
+                if let Some(val) = map.get_mut(s) {
+                    return Ok(val);
+                }
+            }
+        } else {
+            if let Some(maps) = self.maps.get_mut(0..depth) {
+                for map in maps.iter_mut().rev() {
+                    if let Some(val) = map.get_mut(s) {
+                        return Ok(val);
+                    }
+                }
             }
         }
-        if let Some(value) = self.values.get_mut(s) {
-            Ok(value)
-        } else if let Some(ref mut enc) = self.enclosing {
-            enc.get_mut(s, depth)
-        } else {
-            Err(Error::Runtime(format!(
-                "variable {:?} is not yet defined",
-                s
-            )))
-        }
+        Err(Error::Runtime(format!(
+            "variable {:?} is not yet defined",
+            s
+        )))
     }
 }

@@ -66,12 +66,12 @@ impl Callable for Class {
         if let Some(mut init) = init {
             int.env.descend();
             init.this_name = "*".to_string();
-            init.this_depth = int.env.depth;
+            init.this_depth = int.env.depth();
             let prev_depth = int.current_depth;
-            int.current_depth = int.env.depth;
+            int.current_depth = int.env.depth();
             int.env.define("*".to_string(), Some(Value::Class(ret)));
             init.call(int, args)?;
-            let updated = int.env.get("*", int.env.depth)?;
+            let updated = int.env.get("*", int.env.depth())?;
             int.env.ascend();
             int.current_depth = prev_depth;
             Ok(updated)
@@ -91,7 +91,7 @@ impl Callable for Method {
     fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         let this = int.env.get(&self.this_name, self.this_depth)?;
         int.env.descend();
-        int.current_depth = int.env.depth;
+        int.current_depth = int.env.depth();
         int.env.define("this".to_string(), Some(this));
         for (name, value) in self.func.params.iter().cloned().zip(args.iter().cloned()) {
             int.env.define(name, Some(value));

@@ -18,8 +18,6 @@ impl Callable for Func {
     }
     fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         trace!("calling {}", self.name);
-        let old_envs = int.env.revert_to(self.env_id)?;
-        int.current_depth = self.env_id;
         int.env.descend(); // create scope for function args
         for (name, value) in self.params.iter().cloned().zip(args.iter().cloned()) {
             int.env.define(name, Some(value));
@@ -29,11 +27,8 @@ impl Callable for Func {
             Err(Error::Return(v)) => Ok(v),
             Err(e) => Err(e),
         };
-        int.env.ascend(); // ascend out of function arg defs
-        for env in old_envs.into_iter().rev() {
-            int.env.descend_into(env);
-        }
-        int.current_depth = int.env.depth;
+        int.env.ascend();
+        int.current_depth = int.env.depth();
         ret
     }
 }
@@ -67,16 +62,23 @@ test = counter();
 test = counter();
 ";
         let mut int = Interpreter::new();
-        let mut p =
+        let p =
             crate::parser::Parser::new(crate::scanner::Scanner::new(lox.to_string()).unwrap());
-        int.interpret(&p.next().unwrap().unwrap()).unwrap();
-        int.interpret(&p.next().unwrap().unwrap()).unwrap();
-        int.interpret(&p.next().unwrap().unwrap()).unwrap();
+        let stmts = p.collect::<Result<Vec<crate::stmt::Stmt>, Error>>().unwrap();
+        let mut r = crate::resolver::Resolver::new();
+        for stmt in &stmts {
+            r.resolve_stmt(stmt).unwrap();
+        }
+        int.locals = dbg!(r.depths);
+        let mut p = stmts.iter();
+        int.interpret(&p.next().unwrap()).unwrap(); // define test
+        int.interpret(&p.next().unwrap()).unwrap(); // define makeCounter
+        int.interpret(&p.next().unwrap()).unwrap(); // call make counter
 
-        int.interpret(&p.next().unwrap().unwrap()).unwrap();
+        int.interpret(&p.next().unwrap()).unwrap();
         let test = int.env.get("test", 1).expect("Failed to get test from env");
         assert_eq!(test, Value::Number(1f64));
-        int.interpret(&p.next().unwrap().unwrap()).unwrap();
+        int.interpret(&p.next().unwrap()).unwrap();
         let test2 = int.env.get("test", 1).expect("Failed to get test from env");
         assert_eq!(test2, Value::Number(2f64));
         println!("test: {:?}", test);

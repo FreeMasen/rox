@@ -9,6 +9,7 @@ use super::{
     token::{Token, TokenType},
     value::Value,
 };
+use std::collections::HashMap;
 
 use log::trace;
 
@@ -17,6 +18,7 @@ pub struct Interpreter {
     pub closures: Vec<Env>,
     pub recur: usize,
     pub current_depth: usize,
+    pub locals: HashMap<String, usize>,
 }
 
 type IntResult = Result<Value, Error>;
@@ -87,18 +89,24 @@ impl ExprVisitor<Value> for Interpreter {
 
     fn visit_var(&mut self, name: &str) -> IntResult {
         trace!("visit_var {}, {}", name, self.current_depth);
-        self.env.get(name, self.env.depth)
+        self.look_up_variable(name)
     }
 
     fn visit_assign(&mut self, name: &str, expr: &Expr) -> IntResult {
         trace!("visit_assign {:?} {:?}", name, expr);
+        let depth = if let Some(dist) = self.locals.get(name) {
+            *dist
+        } else {
+            self.env.depth()
+        };
         let mut val = self.evaluate(expr)?;
         if let Value::Class(ref mut inst) = val {
             for (_, method) in inst.methods.iter_mut() {
                 method.this_name = name.to_string()
             }
         }
-        self.env.assign(name, val)
+        self.env.assign_at(name, val.clone(), depth)?;
+        Ok(val)
     }
 
     fn visit_log(&mut self, left: &Expr, op: &Token, right: &Expr) -> IntResult {
@@ -237,7 +245,7 @@ impl StmtVisitor<()> for Interpreter {
             name: name.to_string(),
             params: params.to_vec(),
             body: body.to_vec(),
-            env_id: self.env.depth + 1,
+            env_id: self.env.depth() + 1,
         };
         self.env.define(name.to_string(), Some(Value::Func(func)));
         let closure = self.env.clone();
@@ -278,23 +286,25 @@ impl StmtVisitor<()> for Interpreter {
 }
 impl Default for Interpreter {
     fn default() -> Self {
-        let env = Env::root();
+        let env = Env::new();
         Self {
-            current_depth: env.depth,
+            current_depth: env.depth(),
             env,
             closures: Vec::new(),
             recur: 0,
+            locals: HashMap::new(),
         }
     }
 }
 impl Interpreter {
     pub fn new() -> Self {
-        let env = Env::root();
+        let env = Env::new();
         Self {
-            current_depth: env.depth,
+            current_depth: env.depth(),
             env,
             closures: Vec::new(),
             recur: 0,
+            locals: HashMap::new(),
         }
     }
 
@@ -314,7 +324,13 @@ impl Interpreter {
 
     pub fn evaluate_mut(&mut self, expr: &Expr) -> Result<&mut Value, Error> {
         match expr {
-            Expr::Var(name) => self.env.get_mut(name, self.current_depth),
+            Expr::Var(name) => {
+                if let Some(depth) = self.locals.get(name) {
+                    self.env.get_mut(name, *depth)
+                } else {
+                    Err(Error::Parser(format!("unable to find {}", name)))
+                }
+            },
             Expr::Get { object, name } => {
                 if let Value::Class(inst) = self.evaluate_mut(object)? {
                     inst.get_mut(name)
@@ -334,7 +350,7 @@ impl Interpreter {
     pub fn execute_block(&mut self, stmts: &[Stmt]) -> Result<(), Error> {
         let old_depth = self.current_depth;
         self.env.descend();
-        self.current_depth = self.env.depth;
+        self.current_depth = self.env.depth();
         for stmt in stmts {
             if let Err(e) = self.interpret(stmt) {
                 self.env.ascend();
@@ -366,6 +382,10 @@ impl Interpreter {
         }
     }
 
+    pub fn resolve(&mut self, name: &str, depth: usize) {
+        
+    }
+
     fn is_truthy(lit: &Value) -> bool {
         match lit {
             Value::Nil => false,
@@ -381,6 +401,13 @@ impl Interpreter {
             (Value::Number(l), Value::Number(r)) => l.eq(r),
             (Value::Bool(l), Value::Bool(r)) => l == r,
             _ => false,
+        }
+    }
+    fn look_up_variable(&self, name: &str) -> Result<Value, Error> {
+        if let Some(dist) = self.locals.get(name) {
+            self.env.get(name, *dist)
+        } else {
+            self.env.get(name, self.env.depth())
         }
     }
 }

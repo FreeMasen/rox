@@ -1,0 +1,386 @@
+﻿cargo :    Compiling rox v0.1.0 (C:\Users\rmasen\projects\rox)
+At line:1 char:1
++ cargo test nested -- --nocapture 2> outl.log
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Compiling ro...n\projects\rox):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+warning: unused import: `error`
+
+ --> src/lib.rs:1:11
+  |
+1 | use log::{error, trace};
+  |           ^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+
+
+warning: unused variable: `super_class`
+
+  --> src\resolver.rs:90:65
+   |
+90 |     fn visit_class(&mut self, name: &str, methods: &[Function], super_class: &Option<String>) -> Result<(), Error> {
+   |                                                                 ^^^^^^^^^^^ help: consider prefixing with an underscore: `_super_class`
+
+   |
+
+   = note: `#[warn(unused_variables)]` on by default
+
+
+
+warning: unused variable: `name`
+
+   --> src\resolver.rs:157:44
+    |
+
+
+157 |     fn visit_set(&mut self, object: &Expr, name: &str, value: &Expr) -> Result<(), Error> {
+
+
+    |                                            ^^^^ help: consider prefixing with an underscore: `_name`
+
+
+
+warning: method is never used: `descend_into`
+
+  --> src\env.rs:33:5
+   |
+33 |     pub fn descend_into(&mut self, maps: Vec<Map>) {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+   |
+
+
+   = note: `#[warn(dead_code)]` on by default
+
+
+
+warning: method is never used: `revert_to`
+
+  --> src\env.rs:72:5
+
+   |
+
+
+72 |     pub fn revert_to(&mut self, depth: usize) -> Result<Vec<Map>, Error> {
+
+
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+warning: method is never used: `line`
+
+  --> src\parser.rs:23:5
+   |
+
+23 |     pub fn line(&self) -> usize {
+
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+warning: method is never used: `sync`
+
+   --> src\parser.rs:518:5
+    |
+
+518 |     pub fn sync(&mut self) {
+
+
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+warning: method is never used: `error`
+
+
+   --> src/lib.rs:104:5
+
+
+    |
+
+
+104 |     fn error(&mut self, line: usize, e: Error) {
+
+
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+
+warning: method is never used: `report`
+
+
+   --> src/lib.rs:107:5
+
+
+    |
+
+107 |     fn report(&mut self, line: usize, file: &str, msg: &str) {
+
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+warning: unused import: `error`
+
+ --> src/lib.rs:1:11
+  |
+1 | use log::{error, trace};
+  |           ^^^^^
+  |
+
+  = note: `#[warn(unused_imports)]` on by default
+
+
+warning: unused variable: `super_class`
+
+  --> src\resolver.rs:90:65
+
+   |
+
+
+90 |     fn visit_class(&mut self, name: &str, methods: &[Function], super_class: &Option<String>) -> Result<(), Error> {
+
+
+   |                                                                 ^^^^^^^^^^^ help: consider prefixing with an underscore: `_super_class`
+
+
+   |
+
+
+   = note: `#[warn(unused_variables)]` on by default
+
+
+
+warning: unused variable: `name`
+
+   --> src\resolver.rs:157:44
+    |
+
+157 |     fn visit_set(&mut self, object: &Expr, name: &str, value: &Expr) -> Result<(), Error> {
+
+    |                                            ^^^^ help: consider prefixing with an underscore: `_name`
+
+
+
+warning: method is never used: `descend_into`
+
+  --> src\env.rs:33:5
+   |
+33 |     pub fn descend_into(&mut self, maps: Vec<Map>) {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+   = note: `#[warn(dead_code)]` on by default
+
+
+warning: method is never used: `revert_to`
+
+  --> src\env.rs:72:5
+   |
+
+72 |     pub fn revert_to(&mut self, depth: usize) -> Result<Vec<Map>, Error> {
+
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+warning: method is never used: `line`
+
+  --> src\parser.rs:23:5
+   |
+23 |     pub fn line(&self) -> usize {
+
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+warning: method is never used: `sync`
+
+   --> src\parser.rs:518:5
+    |
+518 |     pub fn sync(&mut self) {
+
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+
+warning: method is never used: `error`
+
+   --> src/lib.rs:104:5
+    |
+104 |     fn error(&mut self, line: usize, e: Error) {
+
+
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+warning: method is never used: `report`
+
+   --> src/lib.rs:107:5
+    |
+
+107 |     fn report(&mut self, line: usize, file: &str, msg: &str) {
+
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+
+ 
+   Finished dev [unoptimized + debuginfo] target(s) in 2.78s
+
+ 
+    Running target\debug\deps\rox-2701ec6459342592.exe
+
+ TRACE rox::resolver > Resolver::visit_var_stmt "test" Some(Literal(Number(0.0)))
+
+ TRACE rox::resolver > Resolver::visit_lit
+
+ TRACE rox::resolver > Resolver::visit_func_decl "makeCounter" [] [Var { name: "i", value: Some(Literal(Number(0.0))) }, Func(Function { name: 
+"count", params: [], body: [Expr(Assign { name: "i", value: Binary { left: Var("i"), operator: Token { kind: Plus, lexeme: "+", line: 6 }, right: 
+Literal(Number(1.0)) } }), Return(Some(Var("i")))] }), Return(Some(Var("count")))]
+
+ TRACE rox::resolver > Resolver::visit_var_stmt "i" Some(Literal(Number(0.0)))
+
+ TRACE rox::resolver > Resolver::visit_lit
+
+ TRACE rox::resolver > Resolver::visit_func_decl "count" [] [Expr(Assign { name: "i", value: Binary { left: Var("i"), operator: Token { kind: 
+Plus, lexeme: "+", line: 6 }, right: Literal(Number(1.0)) } }), Return(Some(Var("i")))]
+
+ TRACE rox::resolver > Resolver::visit_expr_stmt Assign { name: "i", value: Binary { left: Var("i"), operator: Token { kind: Plus, lexeme: "+", 
+line: 6 }, right: Literal(Number(1.0)) } }
+
+ TRACE rox::resolver > Resolver::visit_assign "i" Binary { left: Var("i"), operator: Token { kind: Plus, lexeme: "+", line: 6 }, right: 
+Literal(Number(1.0)) }
+
+ TRACE rox::resolver > Resolver::visit_bin Var("i")  Literal(Number(1.0))
+
+ TRACE rox::resolver > Resolver::visit_var i
+
+ TRACE rox::resolver > Resolver::visit_lit
+
+ TRACE rox::resolver > Resolver::visit_return_stmt Some(Var("i"))
+
+ TRACE rox::resolver > Resolver::visit_var i
+
+ TRACE rox::resolver > Resolver::visit_return_stmt Some(Var("count"))
+
+ TRACE rox::resolver > Resolver::visit_var count
+
+ TRACE rox::resolver > Resolver::visit_var_stmt "counter" Some(Call { callee: Var("makeCounter"), arguments: [] })
+
+ TRACE rox::resolver > Resolver::visit_call Var("makeCounter") []
+
+ TRACE rox::resolver > Resolver::visit_var makeCounter
+
+ TRACE rox::resolver > Resolver::visit_expr_stmt Assign { name: "test", value: Call { callee: Var("counter"), arguments: [] } }
+
+ TRACE rox::resolver > Resolver::visit_assign "test" Call { callee: Var("counter"), arguments: [] }
+
+ TRACE rox::resolver > Resolver::visit_call Var("counter") []
+
+ TRACE rox::resolver > Resolver::visit_var counter
+
+ TRACE rox::resolver > Resolver::visit_expr_stmt Assign { name: "test", value: Call { callee: Var("counter"), arguments: [] } }
+
+ TRACE rox::resolver > Resolver::visit_assign "test" Call { callee: Var("counter"), arguments: [] }
+
+ TRACE rox::resolver > Resolver::visit_call Var("counter") []
+
+ TRACE rox::resolver > Resolver::visit_var counter
+[src\func.rs:72
+] r.depths
+ = {
+
+
+    "
+i
+": 1,
+    "
+count
+": 0,
+}
+
+
+ TRACE rox::interpreter > interpret: Var { name: "test", value: Some(Literal(Number(0.0))) }
+
+ TRACE rox::interpreter > visit_var_stmt "test" Some(Literal(Number(0.0)))
+
+ TRACE rox::interpreter > visit_lit 0
+
+ TRACE rox::interpreter > defining test with 0
+
+ TRACE rox::interpreter > 1 completing interpret Ok(())
+
+ TRACE rox::interpreter > interpret: Func(Function { name: "makeCounter", params: [], body: [Var { name: "i", value: Some(Literal(Number(0.0))) }, 
+Func(Function { name: "count", params: [], body: [Expr(Assign { name: "i", value: Binary { left: Var("i"), operator: Token { kind: Plus, lexeme: 
+"+", line: 6 }, right: Literal(Number(1.0)) } }), Return(Some(Var("i")))] }), Return(Some(Var("count")))] })
+
+ TRACE rox::interpreter > visit_func_decl "makeCounter" [] [Var { name: "i", value: Some(Literal(Number(0.0))) }, Func(Function { name: "count", 
+params: [], body: [Expr(Assign { name: "i", value: Binary { left: Var("i"), operator: Token { kind: Plus, lexeme: "+", line: 6 }, right: 
+Literal(Number(1.0)) } }), Return(Some(Var("i")))] }), Return(Some(Var("count")))]
+
+ TRACE rox::interpreter > 1 completing interpret Ok(())
+
+ TRACE rox::interpreter > interpret: Var { name: "counter", value: Some(Call { callee: Var("makeCounter"), arguments: [] }) }
+
+ TRACE rox::interpreter > visit_var_stmt "counter" Some(Call { callee: Var("makeCounter"), arguments: [] })
+
+ TRACE rox::interpreter > visit_call Var("makeCounter") []
+
+ TRACE rox::interpreter > visit_var makeCounter, 2
+
+ TRACE rox::env         > 2: 2
+
+ TRACE rox::func        > calling makeCounter
+
+ TRACE rox::env         > decending from, 2
+
+ TRACE rox::env         > decending from, 3
+
+ TRACE rox::interpreter > interpret: Var { name: "i", value: Some(Literal(Number(0.0))) }
+
+ TRACE rox::interpreter > visit_var_stmt "i" Some(Literal(Number(0.0)))
+
+ TRACE rox::interpreter > visit_lit 0
+
+ TRACE rox::interpreter > defining i with 0
+
+ TRACE rox::interpreter > 2 completing interpret Ok(())
+
+ TRACE rox::interpreter > interpret: Func(Function { name: "count", params: [], body: [Expr(Assign { name: "i", value: Binary { left: Var("i"), 
+operator: Token { kind: Plus, lexeme: "+", line: 6 }, right: Literal(Number(1.0)) } }), Return(Some(Var("i")))] })
+
+ TRACE rox::interpreter > visit_func_decl "count" [] [Expr(Assign { name: "i", value: Binary { left: Var("i"), operator: Token { kind: Plus, 
+lexeme: "+", line: 6 }, right: Literal(Number(1.0)) } }), Return(Some(Var("i")))]
+
+ TRACE rox::interpreter > 2 completing interpret Ok(())
+
+ TRACE rox::interpreter > interpret: Return(Some(Var("count")))
+
+ TRACE rox::interpreter > visit_return_stmt Some(Var("count"))
+
+ TRACE rox::interpreter > visit_var count, 4
+ TRACE rox::env         > 0: 4
+
+ TRACE rox::interpreter > 2 completing interpret Err(Runtime("variable \"count\" is not yet defined"))
+
+ TRACE rox::interpreter > 1 completing interpret Err(Runtime("variable \"count\" is not yet defined"))
+
+thread '
+func::test::nested_funcs' panicked at 'called `Result::unwrap()` on an `Err` value: Runtime("variable \"count\" is not yet defined")', 
+src\libcore\result.rs:
+1165:
+5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
+
+error
+: test failed, to rerun pass '--lib'
+

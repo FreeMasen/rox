@@ -1,29 +1,28 @@
 use crate::{
     error::{Error},
-    expr::{Expr, ExprVisitor, Literal, ScopedExpr},
-    interpreter::Interpreter,
-    parser::Parser,
-    stmt::{Stmt, StmtVisitor, ScopedStmt},
+    expr::{Expr, ExprVisitor, Literal},
+    stmt::{Stmt, StmtVisitor, Function},
     token::Token,
+    interpeter::Interpreter,
 };
-use std::{cell::Cell,
-        collections::HashMap,
-};
+use std::collections::HashMap;
 use log::trace;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 enum FuncType {
     None,
     Func,
     Init,
     Method
 }
-pub struct Resolver {
+pub struct Resolver<'a> {
     pub scopes: Vec<HashMap<String, bool>>,
+    pub depths: HashMap<String, usize>,
     current_func: FuncType,
+    interpreter: &'a mut Interpreter,
 }
 
-impl StmtVisitor<()> for Resolver {
+impl<'a> StmtVisitor<()> for Resolver<'a> {
     fn visit_print_stmt(&mut self, expr: &Expr) -> Result<(), Error> {
         trace!("Resolver::visit_expr_stmt {:?}", expr);
         self.resolve_expr(expr)?;
@@ -34,17 +33,20 @@ impl StmtVisitor<()> for Resolver {
         self.resolve_expr(expr)?;
         Ok(())
     }
-    fn visit_var_stmt(&mut self, name: &str, expr: &Option<Expr>) -> Result<(), Error> {
+    fn visit_var_stmt(&mut self, name: String, expr: Option<Expr>) -> Result<(), Error> {
         trace!("Resolver::visit_var_stmt {:?} {:?}", name, expr);
-        self.declare(name)?;
+        self.declare(&name)?;
         if let Some(expr) = expr {
-            self.resolve_expr(expr)?;
+            self.resolve_expr(&expr)?;
         }
+        self.define(&name);
         Ok(())
     }
     fn visit_block_stmt(&mut self, list: &[Stmt]) -> Result<(), Error> {
         trace!("Resolver::visit_block_stmt {:?}", list);
+        self.begin_scope();
         self.resolve_stmt_list(list)?;
+        self.end_scope();
         Ok(())
     }
     fn visit_if_stmt(
@@ -76,18 +78,18 @@ impl StmtVisitor<()> for Resolver {
     }
     fn visit_return_stmt(&mut self, expr: &Option<Expr>) -> Result<(), Error> {
         trace!("Resolver::visit_return_stmt {:?}", expr);
-        if let FuncType::None = self.current_func {
-            return Err(Error::Parser(format!("cannot return from outside of a function or method")));
-        }
-        if let Some(expr) = expr {
-            if let FuncType::Init = self.current_func {
-                return Err(Error::Parser(format!("Cannot return a value from an initializer")));
-            }
+        if self.current_func == FuncType::None {
+            Err(Error::Parser(format!("cannot return from outside of a function or method")))
+        } else if self.current_func == FuncType::Init {
+            Err(Error::Parser(format!("Cannot return a value from an initializer")))
+        } else if let Some(expr) = expr {
             self.resolve_expr(expr)?;
+            Ok(())
+        } else {
+            Ok(())
         }
-        Ok(())
     }
-    fn visit_class(&mut self, name: &str, methods: &[Function]) -> Result<(), Error> {
+    fn visit_class(&mut self, name: &str, methods: &[Function], super_class: &Option<String>) -> Result<(), Error> {
         self.define(name);
         for meth in methods {
             self.resolve_func(&meth.params, &meth.body, FuncType::Method)?;
@@ -96,7 +98,7 @@ impl StmtVisitor<()> for Resolver {
     }
 }
 
-impl ExprVisitor<()> for Resolver {
+impl<'a> ExprVisitor<()> for Resolver<'a> {
     fn visit_bin(&mut self, left: &Expr, _: &Token, right: &Expr) -> Result<(), Error> {
         trace!("Resolver::visit_bin {:?}  {:?}", left, right);
         self.resolve_expr(left)?;
@@ -126,12 +128,13 @@ impl ExprVisitor<()> for Resolver {
                 }
             }
         }
+        self.resolve_local(name);
         Ok(())
     }
-    fn visit_assign(&mut self, name: &str, value: &Expr, scope: &Cell<Option<usize>>) -> Result<(), Error> {
-        trace!("Resolver::visit_assign {:?} {:?} {:?}", name, value, scope);
+    fn visit_assign(&mut self, name: &str, value: &Expr) -> Result<(), Error> {
+        trace!("Resolver::visit_assign {:?} {:?}", name, value);
         self.resolve_expr(value)?;
-        scope.set(self.resolve_local(name));
+        self.resolve_local(name);
         Ok(())
     }
     fn visit_log(&mut self, left: &Expr, _: &Token, right: &Expr) -> Result<(), Error> {
@@ -158,13 +161,19 @@ impl ExprVisitor<()> for Resolver {
         self.resolve_expr(value)?;
         Ok(())
     }
+
+    fn visit_this(&mut self, ) -> Result<(), Error> {
+        unimplemented!()
+    }
 }
 
-impl Resolver {
-    pub fn new() -> Self {
+impl<'a> Resolver<'a> {
+    pub fn new(interpreter: &'a mut Interpreter) -> Self {
         Self {
             current_func: FuncType::None,
+            depths: HashMap::new(),
             scopes: Vec::new(),
+            interpreter,
         }
     }
 
@@ -209,7 +218,6 @@ impl Resolver {
                 scope.insert(name.to_string(), false);
             }
         }
-        
         Ok(())
     }
 
@@ -221,13 +229,12 @@ impl Resolver {
         }
     }
 
-    pub fn resolve_local(&mut self, name: &str) -> Option<usize> {
+    pub fn resolve_local(&mut self, name: &str) {
         let scope_len = self.scopes.len().saturating_sub(1);
         for (i, scope) in self.scopes.iter_mut().enumerate().rev() {
             if scope.contains_key(name) {
-                return Some(scope_len - i);
+                self.depths.insert(name.to_string(), scope_len - i);
             }
         }
-        return None;
     }
 }
