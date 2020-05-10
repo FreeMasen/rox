@@ -1,12 +1,19 @@
-use crate::{callable::Callable, error::Error, interpreter::Interpreter, stmt::Stmt, value::Value};
-use log::trace;
+use crate::{
+    callable::Callable,
+    env::Env,
+    error::Error,
+    interpreter::Interpreter,
+    stmt::Stmt,
+    value::Value
+};
 
 #[derive(Debug, Clone)]
 pub struct Func {
     pub name: String,
     pub params: Vec<String>,
     pub body: Vec<Stmt>,
-    pub env_id: usize,
+    pub env: Env,
+    pub env_idx: usize,
 }
 
 impl Callable for Func {
@@ -16,24 +23,22 @@ impl Callable for Func {
     fn arity(&self) -> usize {
         self.params.len()
     }
-    fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
-        trace!("calling {}", self.name);
-        let old_envs = int.env.revert_to(self.env_id)?;
-        int.current_depth = self.env_id;
-        int.env.descend(); // create scope for function args
-        for (name, value) in self.params.iter().cloned().zip(args.iter().cloned()) {
+    fn call(&mut self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
+        let tail_env = int.env.split_to_base();
+        int.env.append(self.env.clone());
+
+        for (name, value) in self.params.iter().zip(args.iter().cloned()) {
             int.env.define(name, Some(value));
         }
-        let ret = match int.execute_block(&self.body) {
+        let ret = match int.execute_block(&mut self.body) {
             Ok(_) => Ok(Value::Nil),
             Err(Error::Return(v)) => Ok(v),
             Err(e) => Err(e),
         };
-        int.env.ascend(); // ascend out of function arg defs
-        for env in old_envs.into_iter().rev() {
-            int.env.descend_into(env);
-        }
-        int.current_depth = int.env.depth;
+        
+        self.env = int.env.clone_to_base();
+        int.env.append(tail_env);
+        int.env.assign(self.name(), Value::Func(self.clone()))?;
         ret
     }
 }
@@ -63,22 +68,40 @@ fun makeCounter() {
 }
 
 var counter = makeCounter();
-test = counter();
-test = counter();
+var test1 = counter();
+var test2 = counter();
 ";
         let mut int = Interpreter::new();
         let mut p =
             crate::parser::Parser::new(crate::scanner::Scanner::new(lox.to_string()).unwrap());
-        int.interpret(&p.next().unwrap().unwrap()).unwrap();
-        int.interpret(&p.next().unwrap().unwrap()).unwrap();
-        int.interpret(&p.next().unwrap().unwrap()).unwrap();
+        int.interpret(&mut p.next().unwrap().unwrap()).unwrap();
+        int.interpret(&mut p.next().unwrap().unwrap()).unwrap();
+        int.interpret(&mut p.next().unwrap().unwrap()).unwrap();
 
-        int.interpret(&p.next().unwrap().unwrap()).unwrap();
-        let test = int.env.get("test", 1).expect("Failed to get test from env");
-        assert_eq!(test, Value::Number(1f64));
-        int.interpret(&p.next().unwrap().unwrap()).unwrap();
-        let test2 = int.env.get("test", 1).expect("Failed to get test from env");
-        assert_eq!(test2, Value::Number(2f64));
-        println!("test: {:?}", test);
+        int.interpret(&mut p.next().unwrap().unwrap()).unwrap();
+        let test = int.env.get("test1").expect("Failed to get test1 from env");
+        assert_eq!(test, Value::Number(1f64), "test1 was not 1");
+        int.interpret(&mut p.next().unwrap().unwrap()).unwrap();
+        let test2 = int.env.get("test2").expect("Failed to get test2 from env");
+        assert_eq!(test2, Value::Number(2f64), "test2 was not 2");    }
+
+    #[test]
+    fn recursive() {
+        let _ = pretty_env_logger::try_init();
+        let lox = "
+        fun fib(n) {
+            if (n < 2) return n;
+            return fib(n - 1) + fib(n - 2);
+        }
+        var test = fib(4);";
+        let mut int = Interpreter::new();
+        let mut p =
+            crate::parser::Parser::new(crate::scanner::Scanner::new(lox.to_string()).unwrap());
+        let mut fib = p.next().unwrap().expect("failed to define fib");
+        int.interpret(&mut fib).expect("failed to define fib def");
+        let mut test = p.next().unwrap().expect("failed to parse test assignment");
+        int.interpret(&mut test).expect("failed to evalue test assignment");
+        let test = int.env.get("test").expect("Failed to get test from env");
+        assert_eq!(test, Value::Number(3f64));
     }
 }

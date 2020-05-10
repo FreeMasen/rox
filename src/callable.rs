@@ -11,5 +11,5 @@ where
     fn arity(&self) -> usize {
         0
     }
-    fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error>;
+    fn call(&mut self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error>;
 }

@@ -154,7 +154,7 @@ impl Scanner {
             .collect::<String>()
             .trim()
             .to_string();
-        Token::new(kind, text, self.line)
+        Token::new(kind, text, self.line, self.start, self.current)
     }
     fn match_next(&mut self, e: char) -> bool {
         if self.is_at_end() {

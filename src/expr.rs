@@ -1,5 +1,4 @@
 use crate::{error::Error, token::Token, value::Value};
-
 #[derive(Debug, Clone)]
 pub enum Expr {
     Binary {
@@ -64,7 +63,7 @@ impl ::std::fmt::Display for Literal {
 }
 
 impl Expr {
-    pub fn accept<T>(&self, visitor: &mut impl ExprVisitor<T>) -> Result<T, Error> {
+    pub fn accept<T>(&mut self, visitor: &mut impl ExprVisitor<T>) -> Result<T, Error> {
         match self {
             Expr::Binary {
                 left,
@@ -125,15 +124,15 @@ impl Expr {
 }
 
 pub trait ExprVisitor<T> {
-    fn visit_bin(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<T, Error>;
-    fn visit_group(&mut self, group: &Expr) -> Result<T, Error>;
+    fn visit_bin(&mut self, left: &mut Expr, op: &Token, right: &mut Expr) -> Result<T, Error>;
+    fn visit_group(&mut self, group: &mut Expr) -> Result<T, Error>;
     fn visit_lit(&self, lit: &Literal) -> Result<T, Error>;
-    fn visit_un(&mut self, op: &Token, ex: &Expr) -> Result<T, Error>;
+    fn visit_un(&mut self, op: &Token, ex: &mut Expr) -> Result<T, Error>;
     fn visit_var(&mut self, name: &str) -> Result<T, Error>;
-    fn visit_assign(&mut self, name: &str, value: &Expr) -> Result<T, Error>;
-    fn visit_log(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<T, Error>;
-    fn visit_call(&mut self, callee: &Expr, arguments: &[Expr]) -> Result<T, Error>;
-    fn visit_get(&mut self, object: &Expr, name: &str) -> Result<T, Error>;
-    fn visit_set(&mut self, object: &Expr, name: &str, value: &Expr) -> Result<T, Error>;
+    fn visit_assign(&mut self, name: &str, value: &mut Expr) -> Result<T, Error>;
+    fn visit_log(&mut self, left: &mut Expr, op: &Token, right: &mut Expr) -> Result<T, Error>;
+    fn visit_call(&mut self, callee: &mut Expr, arguments: &mut [Expr]) -> Result<T, Error>;
+    fn visit_get(&mut self, object: &mut Expr, name: &str) -> Result<T, Error>;
+    fn visit_set(&mut self, object: &mut Expr, name: &str, value: &mut Expr) -> Result<T, Error>;
     fn visit_this(&mut self) -> Result<T, Error>;
 }

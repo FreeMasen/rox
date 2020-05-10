@@ -2,12 +2,13 @@
 pub struct Token {
     pub kind: TokenType,
     pub lexeme: String,
-    pub line: usize,
+    line: usize,
+    pub span: (usize, usize)
 }
 
 impl Token {
-    pub fn new(kind: TokenType, lexeme: String, line: usize) -> Self {
-        Self { kind, lexeme, line }
+    pub fn new(kind: TokenType, lexeme: String, line: usize, start: usize, end: usize) -> Self {
+        Self { kind, lexeme, line, span: (start, end) }
     }
 }
 

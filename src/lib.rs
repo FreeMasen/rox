@@ -89,12 +89,12 @@ impl Lox {
         let mut parser = parser::Parser::new(scanner);
 
         while let Some(stmt) = parser.next() {
-            match &stmt {
-                Ok(stmt) => {
-                    int.interpret(&stmt)?;
+            match stmt {
+                Ok(mut stmt) => {
+                    int.interpret(&mut stmt)?;
                 }
                 Err(e) => {
-                    error!("Error: {}", e);
+                    error!("Error on line {}: {}", parser.line(), e);
                     self.error(parser.line(), e.clone());
                     parser.sync();
                 }

@@ -28,7 +28,7 @@ impl Callable for NativeFunc {
             NativeFunc::Mod(m) => m.arity(),
         }
     }
-    fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
+    fn call(&mut self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         match self {
             NativeFunc::Clock(c) => c.call(int, args),
             NativeFunc::Mod(m) => m.call(int, args),
@@ -43,7 +43,7 @@ impl Callable for Clock {
     fn name(&self) -> &str {
         "clock"
     }
-    fn call(&self, _: &mut Interpreter, _: &[Value]) -> Result<Value, Error> {
+    fn call(&mut self, _: &mut Interpreter, _: &[Value]) -> Result<Value, Error> {
         let now = ::std::time::SystemTime::now();
         let dur = now
             .duration_since(::std::time::UNIX_EPOCH)
@@ -60,7 +60,7 @@ impl Callable for Mod {
     fn arity(&self) -> usize {
         2
     }
-    fn call(&self, _: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
+    fn call(&mut self, _: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         if let Some(Value::Number(lhs)) = args.get(0) {
             if let Some(Value::Number(rhs)) = args.get(1) {
                 return Ok(Value::Number(lhs % rhs));

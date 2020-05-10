@@ -7,6 +7,7 @@ use std::collections::HashMap;
 pub struct Class {
     pub name: String,
     pub methods: Vec<Function>,
+    pub env_idx: usize,
 }
 #[derive(Clone, Debug)]
 pub struct ClassInstance {
@@ -35,19 +36,20 @@ impl Callable for Class {
     fn arity(&self) -> usize {
         0
     }
-    fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
+    fn call(&mut self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         let mut methods = HashMap::new();
         let mut init: Option<Method> = None;
         for def in &self.methods {
             let func = Func {
                 name: def.name.to_string(),
-                env_id: int.current_depth + 1,
                 params: def.params.clone(),
                 body: def.body.clone(),
+                env: int.env.clone(),
+                env_idx: self.env_idx,
             };
             let meth = Method {
                 func,
-                this_depth: int.current_depth,
+                this_depth: int.env.depth(),
                 this_name: String::new(), // will get replaced at caller
             };
             if meth.func.name == "init" {
@@ -65,14 +67,11 @@ impl Callable for Class {
         if let Some(mut init) = init {
             int.env.descend();
             init.this_name = "*".to_string();
-            init.this_depth = int.env.depth;
-            let prev_depth = int.current_depth;
-            int.current_depth = int.env.depth;
-            int.env.define("*".to_string(), Some(Value::Class(ret)));
+            init.this_depth = int.env.depth();
+            int.env.define("*", Some(Value::Class(ret)));
             init.call(int, args)?;
-            let updated = int.env.get("*", int.env.depth)?;
+            let updated = int.env.get("*")?;
             int.env.ascend();
-            int.current_depth = prev_depth;
             Ok(updated)
         } else {
             Ok(Value::Class(ret))
@@ -87,20 +86,19 @@ impl Callable for Method {
     fn arity(&self) -> usize {
         self.func.arity()
     }
-    fn call(&self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
-        let this = int.env.get(&self.this_name, self.this_depth)?;
+    fn call(&mut self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
+        let this = int.env.get(&self.this_name)?;
         int.env.descend();
-        int.current_depth = int.env.depth;
-        int.env.define("this".to_string(), Some(this));
-        for (name, value) in self.func.params.iter().cloned().zip(args.iter().cloned()) {
+        int.env.define("this", Some(this));
+        for (name, value) in self.func.params.iter().zip(args.iter().cloned()) {
             int.env.define(name, Some(value));
         }
-        let ret = match int.execute_block(&self.func.body) {
+        let ret = match int.execute_block(&mut self.func.body) {
             Ok(_) => Ok(Value::Nil),
             Err(Error::Return(v)) => Ok(v),
             Err(e) => Err(e),
         };
-        let updated_this = int.env.get("this", int.current_depth)?;
+        let updated_this = int.env.get("this")?;
         int.env.ascend();
         int.env.assign(&self.this_name, updated_this)?;
         ret

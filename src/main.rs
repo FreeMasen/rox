@@ -1,4 +1,3 @@
-use pretty_env_logger;
 use rox::Lox;
 use std::env::args;
 

@@ -15,14 +15,12 @@ use log::trace;
 pub struct Interpreter {
     pub env: Env,
     pub closures: Vec<Env>,
-    pub recur: usize,
-    pub current_depth: usize,
 }
 
 type IntResult = Result<Value, Error>;
 
 impl ExprVisitor<Value> for Interpreter {
-    fn visit_bin(&mut self, left: &Expr, op: &Token, right: &Expr) -> IntResult {
+    fn visit_bin(&mut self, left: &mut Expr, op: &Token, right: &mut Expr) -> IntResult {
         trace!("visit_bin {:?}. {:?} {:?}", left, op.lexeme, right);
         let left = self.evaluate(left)?;
         let right = self.evaluate(right)?;
@@ -54,7 +52,7 @@ impl ExprVisitor<Value> for Interpreter {
         Ok(ret)
     }
 
-    fn visit_group(&mut self, group: &Expr) -> IntResult {
+    fn visit_group(&mut self, group: &mut Expr) -> IntResult {
         trace!("visit_group {:?}", group);
         if let Expr::Grouping(inner) = group {
             self.evaluate(inner)
@@ -68,7 +66,7 @@ impl ExprVisitor<Value> for Interpreter {
         Ok(lit.clone_into())
     }
 
-    fn visit_un(&mut self, op: &Token, ex: &Expr) -> IntResult {
+    fn visit_un(&mut self, op: &Token, ex: &mut Expr) -> IntResult {
         trace!("visit_unary {:?} {:?}", op.lexeme, ex);
         let right = self.evaluate(ex)?;
         let ret = match (&op.kind, right) {
@@ -86,22 +84,25 @@ impl ExprVisitor<Value> for Interpreter {
     }
 
     fn visit_var(&mut self, name: &str) -> IntResult {
-        trace!("visit_var {}, {}", name, self.current_depth);
-        self.env.get(name, self.env.depth)
+        trace!("visit_var {}", name);
+        self.env.get(name)
     }
 
-    fn visit_assign(&mut self, name: &str, expr: &Expr) -> IntResult {
+    fn visit_assign(&mut self, name: &str, expr: &mut Expr) -> IntResult {
         trace!("visit_assign {:?} {:?}", name, expr);
         let mut val = self.evaluate(expr)?;
-        if let Value::Class(ref mut inst) = val {
-            for (_, method) in inst.methods.iter_mut() {
-                method.this_name = name.to_string()
+        match &mut val {
+            Value::Class(ref mut inst) => {
+                for (_, method) in inst.methods.iter_mut() {
+                    method.this_name = name.to_string()
+                }
             }
+            _ => ()
         }
         self.env.assign(name, val)
     }
 
-    fn visit_log(&mut self, left: &Expr, op: &Token, right: &Expr) -> IntResult {
+    fn visit_log(&mut self, left: &mut Expr, op: &Token, right: &mut Expr) -> IntResult {
         trace!("visit_log {:?} {:?} {:?}", left, op.lexeme, right);
         let left = self.evaluate(left)?;
         let ret = match (&op.kind, Self::is_truthy(&left)) {
@@ -114,29 +115,35 @@ impl ExprVisitor<Value> for Interpreter {
         Ok(ret)
     }
 
-    fn visit_call(&mut self, callee: &Expr, arguments: &[Expr]) -> IntResult {
+    fn visit_call(&mut self, callee: &mut Expr, arguments: &mut [Expr]) -> IntResult {
         trace!("visit_call {:?} {:?}", callee, arguments);
-        let old_depth = self.current_depth;
-        let callee = self.evaluate(callee)?;
+        let mut callee = self.evaluate(callee)?;
         let args = arguments
-            .iter()
+            .iter_mut()
             .map(|e| self.evaluate(e))
             .collect::<Result<Vec<Value>, Error>>()?;
-        let ret = match callee {
-            Value::Func(ref c) => self.handle_callable(c, &args),
-            Value::Init(ref c) => self.handle_callable(c, &args),
-            Value::NativeFunc(ref c) => self.handle_callable(c, &args),
-            Value::Method(ref m) => self.handle_callable(m, &args),
+        match &mut callee {
+            Value::Func(c) => {
+                let v = self.handle_callable(c, &args)?;
+                Ok(v)
+            },
+            Value::Init(c) => {
+                self.handle_callable(c, &args)
+            },
+            Value::NativeFunc(c) => {
+                self.handle_callable(c, &args)
+            },
+            Value::Method(m) => {
+                self.handle_callable(m, &args)
+            },
             _ => Err(Error::Runtime(format!(
                 "Attempt to call a something that is not a function {}",
                 callee
             ))),
-        };
-        self.current_depth = old_depth;
-        ret
+        }
     }
 
-    fn visit_get(&mut self, object: &Expr, name: &str) -> IntResult {
+    fn visit_get(&mut self, object: &mut Expr, name: &str) -> IntResult {
         trace!("visit_get {:?} {:?}", object, name);
         if let Value::Class(class) = self.evaluate(object)? {
             class.get(name)
@@ -147,7 +154,7 @@ impl ExprVisitor<Value> for Interpreter {
             )))
         }
     }
-    fn visit_set(&mut self, object: &Expr, name: &str, value: &Expr) -> IntResult {
+    fn visit_set(&mut self, object: &mut Expr, name: &str, value: &mut Expr) -> IntResult {
         trace!("visit_set {:?} {:?} {:?}", object, name, value);
         let value = self.evaluate(value)?;
         if let Value::Class(inst) = self.evaluate_mut(object)? {
@@ -158,35 +165,42 @@ impl ExprVisitor<Value> for Interpreter {
     }
     fn visit_this(&mut self) -> IntResult {
         trace!("visit_this");
-        self.env.get("this", self.current_depth)
+        self.env.get("this")
     }
 }
 
 impl StmtVisitor<()> for Interpreter {
-    fn visit_expr_stmt(&mut self, expr: &Expr) -> Result<(), Error> {
+    fn visit_expr_stmt(&mut self, expr: &mut Expr) -> Result<(), Error> {
         trace!("visit_expr_stmt {:?}", expr);
         self.evaluate(expr)?;
         Ok(())
     }
 
-    fn visit_print_stmt(&mut self, expr: &Expr) -> Result<(), Error> {
+    fn visit_print_stmt(&mut self, expr: &mut Expr) -> Result<(), Error> {
         trace!("visit_expr_stmt {:?}", expr);
         println!("{}", self.evaluate(expr)?);
         Ok(())
     }
 
-    fn visit_var_stmt(&mut self, name: String, expr: Option<Expr>) -> Result<(), Error> {
+    fn visit_var_stmt(&mut self, name: &str, expr: &mut Option<Expr>) -> Result<(), Error> {
         trace!("visit_var_stmt {:?} {:?}", name, expr);
-        let value = if let Some(expr) = expr {
+        let value = if let Some(ref mut expr) = expr {
             let mut val = match expr.accept(self) {
                 Ok(val) | Err(Error::Return(val)) => val,
                 Err(e) => return Err(e),
             };
             trace!("defining {} with {}", name, val);
-            if let Value::Class(ref mut inst) = val {
-                for (_, meth) in inst.methods.iter_mut() {
-                    meth.this_name = name.to_string()
+            match val {
+                Value::Class(ref mut inst) => {
+                    for (_, meth) in inst.methods.iter_mut() {
+                        meth.this_name = name.to_string()
+                    }
+
                 }
+                Value::Func(ref mut f) => {
+                    f.name = name.to_string();
+                },
+                _ => ()
             }
             Some(val)
         } else {
@@ -196,7 +210,7 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn visit_block_stmt(&mut self, list: &[Stmt]) -> Result<(), Error> {
+    fn visit_block_stmt(&mut self, list: &mut [Stmt]) -> Result<(), Error> {
         trace!("visit_block_stmt {:?}", list);
         self.execute_block(list)?;
         Ok(())
@@ -204,9 +218,9 @@ impl StmtVisitor<()> for Interpreter {
 
     fn visit_if_stmt(
         &mut self,
-        test: &Expr,
-        cons: &Stmt,
-        alt: &Option<Box<Stmt>>,
+        test: &mut Expr,
+        cons: &mut Stmt,
+        alt: &mut Option<Box<Stmt>>,
     ) -> Result<(), Error> {
         trace!("visit_if_stmt {:?} {:?} {:?}", test, cons, alt);
         let boolean = self.evaluate(test)?;
@@ -218,7 +232,7 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn visit_while_stmt(&mut self, test: &Expr, body: &Stmt) -> Result<(), Error> {
+    fn visit_while_stmt(&mut self, test: &mut Expr, body: &mut Stmt) -> Result<(), Error> {
         trace!("visit_while_stmt {:?} {:?}", test, body);
         while Self::is_truthy(&self.evaluate(test)?) {
             self.interpret(body)?;
@@ -233,19 +247,21 @@ impl StmtVisitor<()> for Interpreter {
         body: &[Stmt],
     ) -> Result<(), Error> {
         trace!("visit_func_decl {:?} {:?} {:?}", name, params, body);
+        let env = self.env.clone_to_base();
+        
         let func = Func {
             name: name.to_string(),
             params: params.to_vec(),
             body: body.to_vec(),
-            env_id: self.env.depth + 1,
+            env,
+            env_idx: self.env.depth() - 1,
         };
-        self.env.define(name.to_string(), Some(Value::Func(func)));
-        let closure = self.env.clone();
-        self.closures.push(closure);
+        
+        self.env.define(name, Some(Value::Func(func)));
         Ok(())
     }
 
-    fn visit_return_stmt(&mut self, expr: &Option<Expr>) -> Result<(), Error> {
+    fn visit_return_stmt(&mut self, expr: &mut Option<Expr>) -> Result<(), Error> {
         trace!("visit_return_stmt {:?}", expr);
         let ret = if let Some(expr) = expr {
             self.evaluate(expr)?
@@ -254,12 +270,13 @@ impl StmtVisitor<()> for Interpreter {
         };
         Err(Error::Return(ret))
     }
-    fn visit_class(&mut self, name: &str, methods: &[Function]) -> Result<(), Error> {
+    fn visit_class(&mut self, name: &str, methods: &mut [Function]) -> Result<(), Error> {
         trace!("visit_return_stmt {} {:?}", name, methods.len());
-        self.env.define(name.to_string(), None);
+        self.env.define(name, None);
         let class = Class {
             name: name.to_string(),
             methods: methods.to_vec(),
+            env_idx: self.env.depth(),
         };
         let value = Value::Init(class);
         self.env.assign(name, value)?;
@@ -270,10 +287,8 @@ impl Default for Interpreter {
     fn default() -> Self {
         let env = Env::root();
         Self {
-            current_depth: env.depth,
             env,
             closures: Vec::new(),
-            recur: 0,
         }
     }
 }
@@ -281,30 +296,26 @@ impl Interpreter {
     pub fn new() -> Self {
         let env = Env::root();
         Self {
-            current_depth: env.depth,
             env,
             closures: Vec::new(),
-            recur: 0,
         }
     }
 
-    pub fn interpret(&mut self, stmt: &Stmt) -> Result<(), Error> {
+    pub fn interpret(&mut self, stmt: &mut Stmt) -> Result<(), Error> {
         trace!("interpret: {:?}", stmt);
-        self.recur += 1;
         let ret = stmt.accept(self);
-        trace!("{} completing interpret {:?}", self.recur, ret);
-        self.recur = self.recur.saturating_sub(1);
+        trace!("completing interpret {:?}", ret);
         ret?;
         Ok(())
     }
 
-    pub fn evaluate(&mut self, expr: &Expr) -> Result<Value, Error> {
+    pub fn evaluate(&mut self, expr: &mut Expr) -> Result<Value, Error> {
         expr.accept(self)
     }
 
-    pub fn evaluate_mut(&mut self, expr: &Expr) -> Result<&mut Value, Error> {
+    pub fn evaluate_mut(&mut self, expr: &mut Expr) -> Result<&mut Value, Error> {
         match expr {
-            Expr::Var(name) => self.env.get_mut(name, self.current_depth),
+            Expr::Var(name) => self.env.get_mut(name),
             Expr::Get { object, name } => {
                 if let Value::Class(inst) = self.evaluate_mut(object)? {
                     inst.get_mut(name)
@@ -314,17 +325,15 @@ impl Interpreter {
                     ))
                 }
             }
-            Expr::This => self.env.get_mut("this", self.current_depth),
+            Expr::This => self.env.get_mut("this"),
             _ => Err(Error::Runtime(
                 "Invalid left hand side of assignment".to_string(),
             )),
         }
     }
 
-    pub fn execute_block(&mut self, stmts: &[Stmt]) -> Result<(), Error> {
-        let old_depth = self.current_depth;
+    pub fn execute_block(&mut self, stmts: &mut [Stmt]) -> Result<(), Error> {
         self.env.descend();
-        self.current_depth = self.env.depth;
         for stmt in stmts {
             if let Err(e) = self.interpret(stmt) {
                 self.env.ascend();
@@ -332,11 +341,10 @@ impl Interpreter {
             }
         }
         self.env.ascend();
-        self.current_depth = old_depth;
         Ok(())
     }
 
-    fn handle_callable<T>(&mut self, f: &T, arguments: &[Value]) -> Result<Value, Error>
+    fn handle_callable<T>(&mut self, f: &mut T, arguments: &[Value]) -> Result<Value, Error>
     where
         T: Callable + ?Sized,
     {
@@ -391,7 +399,7 @@ while (i < 100) {
         let mut parser =
             crate::parser::Parser::new(crate::scanner::Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
-            int.interpret(&stmt.unwrap()).unwrap();
+            int.interpret(&mut stmt.unwrap()).unwrap();
         }
     }
     #[test]
@@ -405,7 +413,7 @@ for (var i = 0; i < 10; i = i + 1) {
         let mut parser =
             crate::parser::Parser::new(crate::scanner::Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
-            int.interpret(&stmt.unwrap()).unwrap();
+            int.interpret(&mut stmt.unwrap()).unwrap();
         }
     }
 
@@ -429,7 +437,7 @@ print junk.one;
         let mut parser =
             crate::parser::Parser::new(crate::scanner::Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
-            int.interpret(&stmt.unwrap()).unwrap();
+            int.interpret(&mut stmt.unwrap()).unwrap();
         }
     }
     #[test]
@@ -451,13 +459,16 @@ var test2 = isEven(2);
         let mut parser =
             crate::parser::Parser::new(crate::scanner::Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
-            int.interpret(&stmt.unwrap()).unwrap();
+            int.interpret(&mut stmt.unwrap()).unwrap();
+            dbg!(&int.env);
         }
-        let test1 = int.env.get("test1", 1).expect("Unable to get test1");
-        let pre1 = int.env.get("pre1", 1).expect("Unable to get pre1");
+        // dbg!(&int.env);
+        let test1 = int.env.get("test1").expect("Unable to get test1");
+        // dbg!(&int.env);
+        let pre1 = int.env.get("pre1").expect("Unable to get pre1");
         assert_eq!(test1, pre1);
-        let test2 = int.env.get("test2", 1).expect("Unable to get test");
-        let pre2 = int.env.get("pre2", 1).expect("Unable to get pre2");
+        let test2 = int.env.get("test2").expect("Unable to get test");
+        let pre2 = int.env.get("pre2").expect("Unable to get pre2");
         assert_eq!(test2, pre2);
     }
 }

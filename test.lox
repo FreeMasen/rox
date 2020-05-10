@@ -36,6 +36,15 @@ while (i < 10) {
 for (var j = 0; j < 20; j = j + 1) {
   print j;
 }
+fun isOdd(n) {
+  return mod(n, 2) != 0;
+}
+
+fun isEven(n) {
+  print mod(n, 2);
+  print mod(n, 2) == 0;
+  return mod(n, 2) == 0;
+}
 fun randBool() {
   var c = clock();
   print c;
@@ -50,15 +59,7 @@ fun floor(n) {
   return n - rem;
 }
 
-fun isOdd(n) {
-  return mod(n, 2) != 0;
-}
 
-fun isEven(n) {
-  print mod(n, 2);
-  print mod(n, 2) == 0;
-  return mod(n, 2) == 0;
-}
 
 fun hi() {
   if (randBool()) {

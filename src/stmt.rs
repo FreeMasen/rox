@@ -32,11 +32,11 @@ pub struct Function {
 }
 
 impl Stmt {
-    pub fn accept<T>(&self, visitor: &mut impl StmtVisitor<T>) -> Result<T, Error> {
+    pub fn accept<T>(&mut self, visitor: &mut impl StmtVisitor<T>) -> Result<T, Error> {
         match self {
             Stmt::Print(inner) => visitor.visit_print_stmt(inner),
             Stmt::Expr(inner) => visitor.visit_expr_stmt(inner),
-            Stmt::Var { name, value } => visitor.visit_var_stmt(name.clone(), value.clone()),
+            Stmt::Var { name, value } => visitor.visit_var_stmt(name, value),
             Stmt::Block(list) => visitor.visit_block_stmt(list),
             Stmt::If {
                 test,
@@ -54,19 +54,19 @@ impl Stmt {
 }
 
 pub trait StmtVisitor<T> {
-    fn visit_print_stmt(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn visit_expr_stmt(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn visit_var_stmt(&mut self, name: String, expr: Option<Expr>) -> Result<T, Error>;
-    fn visit_block_stmt(&mut self, list: &[Stmt]) -> Result<T, Error>;
+    fn visit_print_stmt(&mut self, expr: &mut Expr) -> Result<T, Error>;
+    fn visit_expr_stmt(&mut self, expr: &mut Expr) -> Result<T, Error>;
+    fn visit_var_stmt(&mut self, name: &str, expr: &mut Option<Expr>) -> Result<T, Error>;
+    fn visit_block_stmt(&mut self, list: &mut [Stmt]) -> Result<T, Error>;
     fn visit_if_stmt(
         &mut self,
-        test: &Expr,
-        cons: &Stmt,
-        alt: &Option<Box<Stmt>>,
+        test: &mut Expr,
+        cons: &mut Stmt,
+        alt: &mut Option<Box<Stmt>>,
     ) -> Result<T, Error>;
-    fn visit_while_stmt(&mut self, test: &Expr, body: &Stmt) -> Result<T, Error>;
+    fn visit_while_stmt(&mut self, test: &mut Expr, body: &mut Stmt) -> Result<T, Error>;
     fn visit_func_decl(&mut self, name: &str, params: &[String], body: &[Stmt])
         -> Result<T, Error>;
-    fn visit_return_stmt(&mut self, expr: &Option<Expr>) -> Result<T, Error>;
-    fn visit_class(&mut self, name: &str, methods: &[Function]) -> Result<T, Error>;
+    fn visit_return_stmt(&mut self, expr: &mut Option<Expr>) -> Result<T, Error>;
+    fn visit_class(&mut self, name: &str, methods: &mut [Function]) -> Result<T, Error>;
 }
