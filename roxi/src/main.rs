@@ -1,4 +1,4 @@
-use rox::Lox;
+use roxi::Lox;
 use std::env::args;
 
 fn main() {

@@ -5,7 +5,7 @@ fun fib(n) {
 }
 
 var before = clock();
-print fib(40);
+print fib(6);
 var after = clock();
 var ms = after - before;
 print "ms:";
