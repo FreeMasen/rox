@@ -1,4 +1,5 @@
-use crate::{error::Error, token::Token, value::Value};
+use crate::{error::Error, value::Value};
+use rox_shared::Token;
 #[derive(Debug, Clone)]
 pub enum Expr {
     Binary {

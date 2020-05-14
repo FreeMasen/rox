@@ -6,9 +6,9 @@ use super::{
     expr::{Expr, ExprVisitor, Literal},
     func::Func,
     stmt::{Function, Stmt, StmtVisitor},
-    token::{Token, TokenType},
     value::Value,
 };
+use rox_shared::{Token, TokenType};
 
 use log::trace;
 
@@ -97,7 +97,7 @@ impl ExprVisitor<Value> for Interpreter {
                     method.this_name = name.to_string()
                 }
             }
-            _ => ()
+            _ => (),
         }
         self.env.assign(name, val)
     }
@@ -126,16 +126,10 @@ impl ExprVisitor<Value> for Interpreter {
             Value::Func(c) => {
                 let v = self.handle_callable(c, &args)?;
                 Ok(v)
-            },
-            Value::Init(c) => {
-                self.handle_callable(c, &args)
-            },
-            Value::NativeFunc(c) => {
-                self.handle_callable(c, &args)
-            },
-            Value::Method(m) => {
-                self.handle_callable(m, &args)
-            },
+            }
+            Value::Init(c) => self.handle_callable(c, &args),
+            Value::NativeFunc(c) => self.handle_callable(c, &args),
+            Value::Method(m) => self.handle_callable(m, &args),
             _ => Err(Error::Runtime(format!(
                 "Attempt to call a something that is not a function {}",
                 callee
@@ -195,12 +189,11 @@ impl StmtVisitor<()> for Interpreter {
                     for (_, meth) in inst.methods.iter_mut() {
                         meth.this_name = name.to_string()
                     }
-
                 }
                 Value::Func(ref mut f) => {
                     f.name = name.to_string();
-                },
-                _ => ()
+                }
+                _ => (),
             }
             Some(val)
         } else {
@@ -248,7 +241,7 @@ impl StmtVisitor<()> for Interpreter {
     ) -> Result<(), Error> {
         trace!("visit_func_decl {:?} {:?} {:?}", name, params, body);
         let env = self.env.clone_to_base();
-        
+
         let func = Func {
             name: name.to_string(),
             params: params.to_vec(),
@@ -256,7 +249,7 @@ impl StmtVisitor<()> for Interpreter {
             env,
             env_idx: self.env.depth() - 1,
         };
-        
+
         self.env.define(name, Some(Value::Func(func)));
         Ok(())
     }

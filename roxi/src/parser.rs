@@ -1,7 +1,7 @@
 use super::error::Error;
 use super::expr::{Expr, Literal};
 use super::stmt::{Function, Stmt};
-use super::token::{Token, TokenType};
+use rox_shared::{Token, TokenType};
 use super::Scanner;
 use super::SimpleResult;
 
@@ -482,7 +482,7 @@ impl Parser {
     fn advance(&mut self) -> Result<(), Error> {
         if !self.is_at_end() {
             if let Some(res) = self.scanner.next() {
-                self.tokens.push(res?)
+                self.tokens.push(res.map_err(|e| Error::Scanner(e))?)
             }
         }
         Ok(())

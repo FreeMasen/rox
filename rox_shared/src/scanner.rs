@@ -1,8 +1,7 @@
 use super::token::{Token, TokenType};
-use super::{Error, SimpleResult};
 
-type ScannerResult = Result<Token, Error>;
-type InvertedResult = Result<Option<Token>, Error>;
+type ScannerResult = Result<Token, String>;
+type InvertedResult = Result<Option<Token>, String>;
 pub struct Scanner {
     source: Vec<char>,
     start: usize,
@@ -12,7 +11,7 @@ pub struct Scanner {
 }
 
 impl Scanner {
-    pub fn new(source: String) -> SimpleResult<Self> {
+    pub fn new(source: String) -> Result<Self, String> {
         let mut ret = Self {
             source: source.chars().collect(),
             start: 0,
@@ -34,8 +33,8 @@ impl Scanner {
             false
         }
     }
-    pub fn scan_tokens(&mut self) -> SimpleResult<Vec<Token>> {
-        let ret = self.collect::<Result<Vec<Token>, Error>>()?;
+    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, String> {
+        let ret = self.collect::<Result<Vec<Token>, String>>()?;
         Ok(ret)
     }
 
@@ -135,8 +134,8 @@ impl Scanner {
         Ok(ret)
     }
 
-    fn unknown_token(&self, c: char) -> Result<Token, Error> {
-        Err(Error::Scanner(format!("unknown token found {:?}", c)))
+    fn unknown_token(&self, c: char) -> Result<Token, String> {
+        Err(format!("unknown token found {:?}", c))
     }
 
     pub fn advance(&mut self) -> Option<char> {
@@ -186,7 +185,7 @@ impl Scanner {
             let _ = self.advance();
         }
         if self.is_at_end() {
-            Err(Error::Scanner("Unterminated string literal".to_string()))
+            Err("Unterminated string literal".to_string())
         } else {
             let _ = self.advance();
             let text = self.source[self.start + 1..self.current - 1]
@@ -214,7 +213,7 @@ impl Scanner {
         let value = text
             .trim()
             .parse()
-            .map_err(|e| Error::Scanner(format!("Unable to parse number {} {}", text, e)))?;
+            .map_err(|e| format!("Unable to parse number {} {}", text, e))?;
         Ok(self.add_literal(TokenType::Number(value)))
     }
 

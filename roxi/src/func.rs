@@ -1,10 +1,5 @@
 use crate::{
-    callable::Callable,
-    env::Env,
-    error::Error,
-    interpreter::Interpreter,
-    stmt::Stmt,
-    value::Value
+    callable::Callable, env::Env, error::Error, interpreter::Interpreter, stmt::Stmt, value::Value,
 };
 
 #[derive(Debug, Clone)]
@@ -35,7 +30,7 @@ impl Callable for Func {
             Err(Error::Return(v)) => Ok(v),
             Err(e) => Err(e),
         };
-        
+
         self.env = int.env.clone_to_base();
         int.env.append(tail_env);
         int.env.assign(self.name(), Value::Func(self.clone()))?;
@@ -83,7 +78,8 @@ var test2 = counter();
         assert_eq!(test, Value::Number(1f64), "test1 was not 1");
         int.interpret(&mut p.next().unwrap().unwrap()).unwrap();
         let test2 = int.env.get("test2").expect("Failed to get test2 from env");
-        assert_eq!(test2, Value::Number(2f64), "test2 was not 2");    }
+        assert_eq!(test2, Value::Number(2f64), "test2 was not 2");
+    }
 
     #[test]
     fn recursive() {
@@ -100,7 +96,8 @@ var test2 = counter();
         let mut fib = p.next().unwrap().expect("failed to define fib");
         int.interpret(&mut fib).expect("failed to define fib def");
         let mut test = p.next().unwrap().expect("failed to parse test assignment");
-        int.interpret(&mut test).expect("failed to evalue test assignment");
+        int.interpret(&mut test)
+            .expect("failed to evalue test assignment");
         let test = int.env.get("test").expect("Failed to get test from env");
         assert_eq!(test, Value::Number(3f64));
     }

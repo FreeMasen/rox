@@ -9,14 +9,12 @@ mod func;
 mod globals;
 mod interpreter;
 mod parser;
-mod scanner;
 mod stmt;
-pub mod token;
 mod value;
 
 pub use error::Error;
 use interpreter::Interpreter;
-pub use scanner::Scanner;
+pub use rox_shared::Scanner;
 
 type SimpleResult<T> = Result<T, Error>;
 pub struct Lox {
@@ -24,7 +22,7 @@ pub struct Lox {
 }
 impl Default for Lox {
     fn default() -> Self {
-        Self { had_error: false } 
+        Self { had_error: false }
     }
 }
 impl Lox {
@@ -84,7 +82,7 @@ impl Lox {
         }
     }
     fn run(&mut self, s: String, int: &mut Interpreter) -> SimpleResult<()> {
-        let scanner = Scanner::new(s)?;
+        let scanner = Scanner::new(s).map_err(|e| Error::Scanner(e))?;
 
         let mut parser = parser::Parser::new(scanner);
 

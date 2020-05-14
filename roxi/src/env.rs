@@ -31,15 +31,13 @@ impl Env {
         ret.values = values;
         ret
     }
-    
+
     pub fn new(depth: usize) -> Self {
         let mut values = ChainMap::default();
         for _ in 0..depth {
             values.new_child()
         }
-        Self {
-            values,
-        }
+        Self { values }
     }
 
     pub fn descend(&mut self) {
@@ -95,9 +93,7 @@ impl Env {
         if values.child_len() == 0 {
             values.new_child()
         }
-        Self {
-            values,
-        }
+        Self { values }
     }
 
     pub fn append(&mut self, mut other: Self) {

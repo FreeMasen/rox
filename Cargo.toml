@@ -2,4 +2,5 @@
 members = [
     "roxi",
     "roxc",
+    "rox_shared",
 ]
