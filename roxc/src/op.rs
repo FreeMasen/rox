@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum OpCode {
     Constant { idx: usize },
     Return,
@@ -7,6 +7,13 @@ pub enum OpCode {
     Sub,
     Mul,
     Div,
+    True,
+    False,
+    Nil,
+    Not,
+    Eq,
+    Gtr,
+    Less,
 }
 
 impl std::fmt::Display for OpCode {
@@ -14,7 +21,10 @@ impl std::fmt::Display for OpCode {
         use OpCode::*;
         match self {
             Constant { .. } => write!(f, "Constant"),
-            Return | Negate | Add | Sub | Mul | Div => core::fmt::Debug::fmt(&self, f),
+            True => write!(f, "true"),
+            False => write!(f, "false"),
+            Nil => write!(f, "nil"),
+            _ => core::fmt::Debug::fmt(&self, f),
         }
     }
 }

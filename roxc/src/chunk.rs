@@ -1,13 +1,15 @@
 use crate::op::OpCode;
 use crate::value::Value;
-#[derive(Default)]
-pub struct Chunk {
+use crate::Obj;
+#[derive(Default, Debug)]
+pub struct Chunk<'a> {
     pub code: Vec<OpCode>,
     pub values: Vec<Value>,
+    pub heap: Vec<Obj<'a>>,
     pub lines: RunList,
 }
 
-impl Chunk {
+impl<'a> Chunk<'a> {
     pub fn write(&mut self, byte: OpCode, line: usize) {
         self.code.push(byte);
         self.lines.push(line);
@@ -15,6 +17,22 @@ impl Chunk {
     pub fn add_constant(&mut self, value: Value) -> usize {
         self.values.push(value);
         self.values.len() - 1
+    }
+    
+    pub fn add_obj(&mut self, obj: Obj<'a>) -> usize {
+        self.heap.push(obj);
+        self.heap.len() - 1
+    }
+
+    pub fn print_obj(&self, idx: usize) {
+        match &self.heap[idx] {
+            Obj::String(s) => {
+                print!("{}", s);
+            }
+            Obj::HashTable { entries } => {
+                print!("{:?}", entries);
+            }
+        }
     }
 
     pub fn dissassemble_all(&self, name: &str) {
@@ -32,15 +50,10 @@ impl Chunk {
         print!("{:04} ", i);
         self.dissassemblly_line(i);
         match code {
-            OpCode::Return
-            | OpCode::Negate
-            | OpCode::Add
-            | OpCode::Sub
-            | OpCode::Mul
-            | OpCode::Div => println!("{}", code),
             OpCode::Constant { idx } => {
                 println!("{: <16} {:?}", format!("{:}", code), &self.values[*idx])
             }
+            _ => println!("{}", code),
         }
     }
 
@@ -59,27 +72,29 @@ impl Chunk {
     }
 }
 
+#[derive(Debug)]
 pub struct RunLength {
     value: usize,
     len: usize,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct RunList {
     values: Vec<RunLength>,
 }
 
 impl RunList {
+    #[tracing::instrument()]
     pub fn push(&mut self, i: usize) {
         if let Some(v) = self.values.last_mut() {
-            if v.len == i {
+            if v.value == i {
                 v.len += 1;
                 return;
             }
         }
         self.values.push(RunLength { value: i, len: 1 })
     }
-
+    #[tracing::instrument()]
     pub fn get_unchecked(&self, idx: usize) -> usize {
         let mut ct = 0;
         for value in &self.values {

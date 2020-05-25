@@ -9,11 +9,17 @@ edition = "2018"
 log = "0.4"
 hash-chain = "0.3"
 rox_shared = { path = "../rox_shared" }
+tracing = { version = "0.1", features = []}
+tracing-subscriber = {version = "0.2"}
+tracing-log = "0.1"
+pretty_env_logger = "0.3"
+slab = "0.4"
+hashers = "1"
 
 [dev-dependencies]
-pretty_env_logger = "0.3"
 
 
 [features]
 default = []
 debug = []
+debug_print = []

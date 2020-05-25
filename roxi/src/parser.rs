@@ -1,9 +1,9 @@
 use super::error::Error;
 use super::expr::{Expr, Literal};
 use super::stmt::{Function, Stmt};
-use rox_shared::{Token, TokenType};
 use super::Scanner;
 use super::SimpleResult;
+use rox_shared::{Token, TokenType};
 
 type ParserItem = Result<Stmt, Error>;
 

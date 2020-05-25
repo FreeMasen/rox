@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "type": "lldb",
             "request": "launch",
@@ -21,6 +22,160 @@
                 }
             },
             "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'roxc' keywords",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=roxc"
+                ],
+                "filter": {
+                    "name": "roxc",
+                    "kind": "lib"
+                }
+            },
+            "args": ["keywords", "--nocapture"],
+            "env": {
+                "RUST_LOG": "trace"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'roxc' puncts",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=roxc"
+                ],
+                "filter": {
+                    "name": "roxc",
+                    "kind": "lib"
+                }
+            },
+            "args": ["puncts", "--nocapture"],
+            "env": {
+                "RUST_LOG": "trace"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'roxc' idents",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=roxc"
+                ],
+                "filter": {
+                    "name": "roxc",
+                    "kind": "lib"
+                }
+            },
+            "args": ["idents", "--nocapture"],
+            "env": {
+                "RUST_LOG": "trace"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'roxc' strings",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=roxc"
+                ],
+                "filter": {
+                    "name": "roxc",
+                    "kind": "lib"
+                }
+            },
+            "args": ["strings", "--nocapture"],
+            "env": {
+                "RUST_LOG": "trace"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'roxc' multiple_strings",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=roxc"
+                ],
+                "filter": {
+                    "name": "roxc",
+                    "kind": "lib"
+                }
+            },
+            "args": ["multiple_strings", "--nocapture"],
+            "env": {
+                "RUST_LOG": "trace"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'roxc' strings",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=roxc"
+                ],
+                "filter": {
+                    "name": "roxc",
+                    "kind": "lib"
+                }
+            },
+            "args": ["strings", "--nocapture"],
+            "env": {
+                "RUST_LOG": "trace"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'roxc' whitespace",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=roxc"
+                ],
+                "filter": {
+                    "name": "roxc",
+                    "kind": "lib"
+                }
+            },
+            "args": ["whitespace", "--nocapture"],
+            "env": {
+                "RUST_LOG": "trace"
+            },
             "cwd": "${workspaceFolder}"
         },
         {
