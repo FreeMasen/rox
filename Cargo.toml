@@ -1,5 +1,6 @@
 [package]
 name = "rust-lox"
+edition = "2018"
 
 [workspace]
 members = [
