@@ -24,6 +24,7 @@ pub enum Stmt {
         methods: Vec<Function>,
     },
 }
+
 #[derive(Debug, Clone)]
 pub struct Function {
     pub name: String,

@@ -263,6 +263,7 @@ impl StmtVisitor<()> for Interpreter {
         };
         Err(Error::Return(ret))
     }
+
     fn visit_class(&mut self, name: &str, methods: &mut [Function]) -> Result<(), Error> {
         trace!("visit_return_stmt {} {:?}", name, methods.len());
         self.env.define(name, None);

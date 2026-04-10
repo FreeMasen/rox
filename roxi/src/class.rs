@@ -9,6 +9,7 @@ pub struct Class {
     pub methods: Vec<Function>,
     pub env_idx: usize,
 }
+
 #[derive(Clone, Debug)]
 pub struct ClassInstance {
     pub class: Class,
@@ -33,9 +34,11 @@ impl Callable for Class {
     fn name(&self) -> &str {
         &self.name
     }
+
     fn arity(&self) -> usize {
         0
     }
+
     fn call(&mut self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         let mut methods = HashMap::new();
         let mut init: Option<Method> = None;
@@ -83,9 +86,11 @@ impl Callable for Method {
     fn name(&self) -> &str {
         self.func.name()
     }
+
     fn arity(&self) -> usize {
         self.func.arity()
     }
+
     fn call(&mut self, int: &mut Interpreter, args: &[Value]) -> Result<Value, Error> {
         let this = int.env.get(&self.this_name)?;
         int.env.descend();
@@ -137,6 +142,7 @@ impl ClassInstance {
             )))
         }
     }
+
     pub fn set(&mut self, key: &str, value: Value) {
         if let Some(val) = self.fields.get_mut(key) {
             *val = value;
