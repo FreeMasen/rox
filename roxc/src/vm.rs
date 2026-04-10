@@ -1,5 +1,12 @@
-use crate::{chunk::Chunk, compiler::Compiler, error::Error, op::OpCode, value::{Value, Obj}, Result};
-use std::{collections::VecDeque, borrow::Cow};
+use crate::{
+    chunk::Chunk,
+    compiler::Compiler,
+    error::Error,
+    op::OpCode,
+    value::{Obj, Value},
+    Result,
+};
+use std::{borrow::Cow, collections::VecDeque};
 
 #[derive(Default)]
 pub struct VM<'a> {
@@ -70,9 +77,11 @@ impl<'a> VM<'a> {
                         eprintln!("missing lhs in Add");
                         e
                     })?;
-                    let v = match  (lhs, rhs) {
-                        (Value::Obj { idx: l_idx }, Value::Obj { idx: r_idx}) => {
-                            if let (Obj::String(s1), Obj::String(s2)) = (&self.chunk.heap[l_idx], &self.chunk.heap[r_idx]) {
+                    let v = match (lhs, rhs) {
+                        (Value::Obj { idx: l_idx }, Value::Obj { idx: r_idx }) => {
+                            if let (Obj::String(s1), Obj::String(s2)) =
+                                (&self.chunk.heap[l_idx], &self.chunk.heap[r_idx])
+                            {
                                 let mut s = s1.to_string();
                                 s.push_str(s2);
                                 let c = Cow::Owned(s);
@@ -82,7 +91,7 @@ impl<'a> VM<'a> {
                                 unimplemented!("")
                             }
                         }
-                        _ => lhs + rhs
+                        _ => lhs + rhs,
                     };
                     self.stack.push_back(v)
                 }
@@ -154,11 +163,11 @@ impl<'a> VM<'a> {
                         eprintln!("missing rhs in Eq");
                         e
                     })?;
-                    let b = match  (lhs, rhs) {
-                        (Value::Obj { idx: l_idx }, Value::Obj { idx: r_idx}) => {
+                    let b = match (lhs, rhs) {
+                        (Value::Obj { idx: l_idx }, Value::Obj { idx: r_idx }) => {
                             self.chunk.heap[l_idx] == self.chunk.heap[r_idx]
                         }
-                        _ => lhs == rhs
+                        _ => lhs == rhs,
                     };
                     self.stack.push_back(Value::Boolean(b));
                 }
@@ -264,7 +273,5 @@ mod test {
     use super::*;
 
     #[test]
-    fn strings() {
-        
-    }
+    fn strings() {}
 }

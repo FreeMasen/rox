@@ -69,8 +69,7 @@ var test1 = counter();
 var test2 = counter();
 ";
         let mut int = Interpreter::new();
-        let mut p =
-            crate::parser::Parser::new(Scanner::new(lox.to_string()).unwrap());
+        let mut p = crate::parser::Parser::new(Scanner::new(lox.to_string()).unwrap());
         int.interpret(&mut p.next().unwrap().unwrap()).unwrap();
         int.interpret(&mut p.next().unwrap().unwrap()).unwrap();
         int.interpret(&mut p.next().unwrap().unwrap()).unwrap();
@@ -93,8 +92,7 @@ var test2 = counter();
         }
         var test = fib(4);";
         let mut int = Interpreter::new();
-        let mut p =
-            crate::parser::Parser::new(Scanner::new(lox.to_string()).unwrap());
+        let mut p = crate::parser::Parser::new(Scanner::new(lox.to_string()).unwrap());
         let mut fib = p.next().unwrap().expect("failed to define fib");
         int.interpret(&mut fib).expect("failed to define fib def");
         let mut test = p.next().unwrap().expect("failed to parse test assignment");

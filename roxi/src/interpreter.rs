@@ -391,8 +391,7 @@ while (i < 100) {
 }
 ";
         let mut int = Interpreter::new();
-        let mut parser =
-            crate::parser::Parser::new(Scanner::new(lox.into()).unwrap());
+        let mut parser = crate::parser::Parser::new(Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
             int.interpret(&mut stmt.unwrap()).unwrap();
         }
@@ -405,8 +404,7 @@ for (var i = 0; i < 10; i = i + 1) {
 }
 ";
         let mut int = Interpreter::new();
-        let mut parser =
-            crate::parser::Parser::new(Scanner::new(lox.into()).unwrap());
+        let mut parser = crate::parser::Parser::new(Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
             int.interpret(&mut stmt.unwrap()).unwrap();
         }
@@ -429,8 +427,7 @@ junk.things("hahah");
 print junk.one;
 "#;
         let mut int = Interpreter::new();
-        let mut parser =
-            crate::parser::Parser::new(Scanner::new(lox.into()).unwrap());
+        let mut parser = crate::parser::Parser::new(Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
             int.interpret(&mut stmt.unwrap()).unwrap();
         }
@@ -451,8 +448,7 @@ var pre2 = mod(2, 2) == 0;
 var test2 = isEven(2);
 ";
         let mut int = Interpreter::new();
-        let mut parser =
-            crate::parser::Parser::new(Scanner::new(lox.into()).unwrap());
+        let mut parser = crate::parser::Parser::new(Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
             int.interpret(&mut stmt.unwrap()).unwrap();
             dbg!(&int.env);

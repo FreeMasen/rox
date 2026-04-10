@@ -1,10 +1,10 @@
-use roxc::{Error,VM};
+use roxc::{Error, VM};
 use std::path::PathBuf;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 fn main() -> Result<()> {
     use tracing_subscriber::{EnvFilter, FmtSubscriber};
-    
+
     tracing_log::LogTracer::init().unwrap();
     let fmtsubscriber = FmtSubscriber::builder()
         .with_env_filter(EnvFilter::from_default_env())

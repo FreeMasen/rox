@@ -18,7 +18,7 @@ impl<'a> Chunk<'a> {
         self.values.push(value);
         self.values.len() - 1
     }
-    
+
     pub fn add_obj(&mut self, obj: Obj<'a>) -> usize {
         self.heap.push(obj);
         self.heap.len() - 1

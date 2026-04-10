@@ -1,9 +1,5 @@
-use std::{
-    borrow::Cow,
-    collections::HashMap,
-    hash::BuildHasherDefault,
-};
 use hashers::fnv::FNV1aHasher64;
+use std::{borrow::Cow, collections::HashMap, hash::BuildHasherDefault};
 type HashTable<'a> = HashMap<Cow<'a, str>, Value, BuildHasherDefault<FNV1aHasher64>>;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -11,13 +7,13 @@ pub enum Value {
     Number(f64),
     Boolean(bool),
     Nil,
-    Obj { idx: usize }
+    Obj { idx: usize },
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Obj<'a> {
     String(Cow<'a, str>),
-    HashTable { entries: HashTable<'a> }
+    HashTable { entries: HashTable<'a> },
 }
 
 impl<'a> Obj<'a> {

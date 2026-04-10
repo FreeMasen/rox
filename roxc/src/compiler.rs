@@ -1,7 +1,7 @@
 use crate::{
     scanner::{Scanner, ScannerError},
     scanner::{Token, TokenType},
-    Chunk, OpCode, Value, Obj,
+    Chunk, Obj, OpCode, Value,
 };
 use std::iter::Peekable;
 
@@ -135,7 +135,9 @@ impl<'a> Compiler<'a> {
     }
     #[tracing::instrument()]
     fn string(&mut self) {
-        let idx = self.chunk.add_obj(Obj::string(&self.prev.slice[1..self.prev.slice.len() - 1]));
+        let idx = self
+            .chunk
+            .add_obj(Obj::string(&self.prev.slice[1..self.prev.slice.len() - 1]));
         self.emit_constant(Value::Obj { idx });
     }
     #[tracing::instrument()]
@@ -283,7 +285,6 @@ impl<'a> Compiler<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -294,15 +295,15 @@ mod test {
         let c = Compiler::new(lox);
         let chunk = c.compile();
         println!("{:#?}", chunk);
-        assert_eq!(chunk.code, vec![
-            OpCode::Constant { idx: 0 },
-            OpCode::Constant { idx: 1 },
-            OpCode::Add,
-            OpCode::Return,
-        ]);
-        assert_eq!(chunk.heap, vec![
-            Obj::string("first"),
-            Obj::string("last"),
-        ]);
+        assert_eq!(
+            chunk.code,
+            vec![
+                OpCode::Constant { idx: 0 },
+                OpCode::Constant { idx: 1 },
+                OpCode::Add,
+                OpCode::Return,
+            ]
+        );
+        assert_eq!(chunk.heap, vec![Obj::string("first"), Obj::string("last"),]);
     }
 }

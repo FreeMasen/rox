@@ -21,7 +21,7 @@ impl ScannerError {
 }
 impl std::fmt::Display for ScannerError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Scanner Error line: {} index: {}",self.line, self.index)
+        write!(f, "Scanner Error line: {} index: {}", self.line, self.index)
     }
 }
 impl std::error::Error for ScannerError {}
@@ -134,11 +134,7 @@ impl<'a> Token<'a> {
         }
     }
     pub fn new(kind: TokenType, slice: &'a str, line: usize) -> Self {
-        Self {
-            kind,
-            slice,
-            line,
-        }
+        Self { kind, slice, line }
     }
 }
 
@@ -568,11 +564,14 @@ mod test {
     }
     #[test]
     fn multiple_strings() {
-        run_batch(r#""first" + "last""#, &[
-            (TokenType::String, r#""first""#),
-            (TokenType::Plus, "+"),
-            (TokenType::String, r#""last""#),
-        ]);
+        run_batch(
+            r#""first" + "last""#,
+            &[
+                (TokenType::String, r#""first""#),
+                (TokenType::Plus, "+"),
+                (TokenType::String, r#""last""#),
+            ],
+        );
     }
 
     fn run_batch(tokens: &str, expects: &[(TokenType, &str)]) {
