@@ -1,5 +1,5 @@
 use crate::{chunk::Chunk, compiler::Compiler, error::Error, op::OpCode, value::{Value, Obj}, Result};
-use std::{collections::{VecDeque, HashSet}, borrow::Cow};
+use std::{collections::VecDeque, borrow::Cow};
 
 #[derive(Default)]
 pub struct VM<'a> {
@@ -7,6 +7,7 @@ pub struct VM<'a> {
     ip: usize,
     stack: VecDeque<Value>,
 }
+
 impl<'a> std::fmt::Debug for VM<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("VM")

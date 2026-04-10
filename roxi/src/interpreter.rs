@@ -379,6 +379,8 @@ impl Interpreter {
 #[cfg(test)]
 mod test {
     use super::*;
+    use rox_shared::Scanner;
+
     #[test]
     fn while_block() {
         let lox = "
@@ -390,7 +392,7 @@ while (i < 100) {
 ";
         let mut int = Interpreter::new();
         let mut parser =
-            crate::parser::Parser::new(crate::scanner::Scanner::new(lox.into()).unwrap());
+            crate::parser::Parser::new(Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
             int.interpret(&mut stmt.unwrap()).unwrap();
         }
@@ -404,7 +406,7 @@ for (var i = 0; i < 10; i = i + 1) {
 ";
         let mut int = Interpreter::new();
         let mut parser =
-            crate::parser::Parser::new(crate::scanner::Scanner::new(lox.into()).unwrap());
+            crate::parser::Parser::new(Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
             int.interpret(&mut stmt.unwrap()).unwrap();
         }
@@ -428,7 +430,7 @@ print junk.one;
 "#;
         let mut int = Interpreter::new();
         let mut parser =
-            crate::parser::Parser::new(crate::scanner::Scanner::new(lox.into()).unwrap());
+            crate::parser::Parser::new(Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
             int.interpret(&mut stmt.unwrap()).unwrap();
         }
@@ -450,7 +452,7 @@ var test2 = isEven(2);
 ";
         let mut int = Interpreter::new();
         let mut parser =
-            crate::parser::Parser::new(crate::scanner::Scanner::new(lox.into()).unwrap());
+            crate::parser::Parser::new(Scanner::new(lox.into()).unwrap());
         while let Some(stmt) = parser.next() {
             int.interpret(&mut stmt.unwrap()).unwrap();
             dbg!(&int.env);
